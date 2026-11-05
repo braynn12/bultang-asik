@@ -3,47 +3,50 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0b1016">
+<meta name="theme-color" content="#0F172A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Bultang Asik">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f80ff'/%3E%3Cpath d='M20 18 L32 40 L44 18 Z' fill='%23fff' opacity='.9'/%3E%3Ccircle cx='32' cy='44' r='7' fill='%23ffc83d'/%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%232f80ff'/%3E%3Cpath d='M20 18 L32 40 L44 18 Z' fill='%23fff' opacity='.9'/%3E%3Ccircle cx='32' cy='44' r='7' fill='%23ffc83d'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F172A'/%3E%3Cpath d='M20 18 L32 40 L44 18 Z' fill='%23F8FAFC' opacity='.9'/%3E%3Ccircle cx='32' cy='44' r='7' fill='%23F97316'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230F172A'/%3E%3Cpath d='M20 18 L32 40 L44 18 Z' fill='%23F8FAFC' opacity='.9'/%3E%3Ccircle cx='32' cy='44' r='7' fill='%23F97316'/%3E%3C/svg%3E">
 <title>Bultang Asik</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700;800&display=swap">
 <style>
 /* Layout: one column. Top: who plays and how long. Middle: the generated game table as a stack of match cards. Second tab: the bill. */
 :root{
-  /* mode gelap (default): charcoal + hijau lime, seperti referensi */
-  --bg:#0b1016; --surface:#141b24; --fg:#f2f5f7; --muted:#8d98a6; --line:#232d39;
-  --court:#b7f34a; --court2:#8fd43a; --court-edge:#86b827; --court-ink:#0b1016;
-  --accent:#b7f34a; --accent-edge:#86b827; --accent-ink:#0b1016;
-  --pink:#b7f34a; --ok:#9be15d; --danger:#ff5a5f;
-  --soft-blue:#17212d; --soft-pink:#2a1a1f; --soft-mint:#18240f; --soft-sun:#1c2614;
-  --display:"Fredoka","Nunito",system-ui,sans-serif;
-  --body:"Nunito",system-ui,sans-serif;
+  /* Design system "Court Night": navy + oranye energik + hijau untuk status selesai/lunas.
+     Font: Barlow Condensed (judul, angka) + Barlow (teks). */
+  --bg:#0F172A; --surface:#192134; --surface2:#1F2A40; --fg:#F8FAFC; --muted:#94A3B8; --line:#2A3448;
+  --court:#F97316; --court-ink:#0F172A;
+  --accent:#F97316; --accent-edge:#EA580C; --accent-ink:#0F172A;
+  --pink:#F97316; --ok:#22C55E; --ok-ink:#0F172A; --danger:#EF4444;
+  --soft-blue:#1C2740; --soft-pink:#2B1A22; --soft-mint:#13291F; --soft-sun:#2A1E14;
+  --display:"Barlow Condensed","Barlow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,sans-serif;
   --ease:cubic-bezier(.22,.8,.24,1);
+  --tap:44px;
   color-scheme:dark;
 }
 :root[data-theme="light"]{
-  --bg:#f5f7f2; --surface:#ffffff; --fg:#10161d; --muted:#5f6b78; --line:#e2e7dc;
-  --court:#10161d; --court2:#2b3540; --court-edge:#000000; --court-ink:#b7f34a;
-  --accent:#b7f34a; --accent-edge:#86b827; --accent-ink:#0b1016;
-  --pink:#4f8f0f; --ok:#3d8f1f; --danger:#e5484d;
-  --soft-blue:#eef3fa; --soft-pink:#fdeeee; --soft-mint:#eef8e3; --soft-sun:#f1f8e2; color-scheme:light}
+  --bg:#FFF7ED; --surface:#FFFFFF; --surface2:#FFF1E2; --fg:#0F172A; --muted:#475569; --line:#F3DFC8;
+  --court:#C2410C; --court-ink:#FFFFFF;
+  --accent:#F97316; --accent-edge:#EA580C; --accent-ink:#0F172A;
+  --pink:#C2410C; --ok:#15803D; --ok-ink:#FFFFFF; --danger:#DC2626;
+  --soft-blue:#EEF2F8; --soft-pink:#FDECEC; --soft-mint:#E8F6EC; --soft-sun:#FFEDD5; color-scheme:light}
 *{box-sizing:border-box}
-:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{padding-top:env(safe-area-inset-top,0px)}
 [hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;transition:background-color .35s var(--ease),color .35s var(--ease)}
-.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:16px 48px;display:flex;flex-direction:column;gap:16px}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;transition:background-color .35s var(--ease),color .35s var(--ease)}
+.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:16px calc(108px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px}
+.ic{width:1.15em;height:1.15em;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.2em}
 header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-h1{font-family:var(--display);font-weight:700;font-size:clamp(30px,8.6vw,38px);line-height:1.05;margin:0;letter-spacing:-.5px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(36px,10vw,46px);line-height:1;margin:0;letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 h1 span{color:var(--pink)}
-h1 .shuttle{display:inline-block;font-size:.8em;margin-left:4px;animation:shuttle 2.6s ease-in-out infinite;transform-origin:50% 80%}
+h1 .shuttle{width:.8em;height:.8em;color:var(--accent);stroke-width:2.2;animation:shuttle 2.6s ease-in-out infinite;transform-origin:50% 80%}
 @keyframes shuttle{0%,100%{transform:translateY(0) rotate(-12deg)}50%{transform:translateY(-6px) rotate(10deg)}}
-.sub{color:var(--muted);font-size:13px;font-weight:600;margin:4px 0 0}
-h2{font-family:var(--display);font-weight:700;font-size:21px;margin:0}
+.sub{color:var(--muted);font-size:14px;font-weight:600;margin:6px 0 8px}
+h2{font-family:var(--display);font-weight:700;font-size:26px;margin:0;text-transform:uppercase;letter-spacing:.5px}
 .hdr-right{display:flex;gap:6px;align-items:center;flex:none;padding-top:4px}
 .sync{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--muted);border:2px solid var(--line);border-radius:99px;padding:3px 10px;white-space:nowrap}
 .sync::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--muted)}
@@ -57,40 +60,43 @@ h2{font-family:var(--display);font-weight:700;font-size:21px;margin:0}
 .grow{flex:1;min-width:0}
 .meta{color:var(--muted);font-size:13px;font-weight:600}
 .note{color:var(--muted);font-size:13px;margin:0}
-button{font:inherit;font-weight:700;cursor:pointer;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;-webkit-tap-highlight-color:transparent;transition:background-color .2s var(--ease),border-color .2s var(--ease),transform .12s var(--ease),box-shadow .2s var(--ease),opacity .2s}
+button{font:inherit;font-weight:700;cursor:pointer;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--fg);padding:8px 14px;min-height:var(--tap);display:inline-flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;transition:background-color .2s var(--ease),border-color .2s var(--ease),transform .12s var(--ease),box-shadow .2s var(--ease),opacity .2s}
 button:active:not(:disabled){transform:scale(.96)}
 button:disabled{opacity:.45;cursor:not-allowed}
 button:focus-visible,input:focus-visible{outline:3px solid color-mix(in srgb,var(--court) 45%,transparent);outline-offset:2px}
 .primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 28%,transparent)}
 .primary:active:not(:disabled){transform:scale(.97);box-shadow:0 2px 8px color-mix(in srgb,var(--accent) 25%,transparent)}
 .primary:disabled{box-shadow:none}
-.icon{width:34px;height:34px;padding:0;border-radius:50%;display:grid;place-items:center;font-size:15px}
-input{font:inherit;font-weight:600;color:var(--fg);background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:9px 12px;min-width:0;width:100%;transition:border-color .2s,box-shadow .2s}
+.icon{width:var(--tap);height:var(--tap);padding:0;border-radius:50%;font-size:18px}
+input{font:inherit;font-weight:600;color:var(--fg);background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:9px 12px;min-height:var(--tap);min-width:0;width:100%;transition:border-color .2s,box-shadow .2s}
 input:focus{outline:none;border-color:var(--court);box-shadow:0 0 0 4px color-mix(in srgb,var(--court) 18%,transparent)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:14px;display:flex;flex-direction:column;gap:12px}
 .card-title{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.card-title b{font-family:var(--display);font-weight:600;font-size:17px}
-label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--muted);min-width:0}
+.card-title b{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:.3px;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px}
+.card-title b .ic{color:var(--court)}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--muted);min-width:0}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .full{grid-column:1/-1}
 
-/* tabs */
-.tabs{display:flex;background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:4px;position:relative;isolation:isolate}
-.tabs .pill{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / 3);border-radius:14px;background:var(--accent);transform:translateX(calc(var(--i,0) * 100%));transition:transform .38s var(--ease);z-index:-1}
-.tabs button{flex:1;min-width:0;border:0;background:transparent;font-family:var(--display);font-weight:600;font-size:15px;line-height:1.2;padding:9px 4px;color:var(--muted)}
-@media (max-width:420px){.tabs button{font-size:13.5px}}
-.tabs button[aria-selected="true"]{color:var(--accent-ink)}
+/* navigasi bawah */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabs{display:flex;max-width:520px;margin:0 auto;position:relative;isolation:isolate}
+.tabs .pill{position:absolute;top:0;bottom:0;left:0;width:calc(100% / 3);border-radius:16px;background:color-mix(in srgb,var(--accent) 16%,transparent);transform:translateX(calc(var(--i,0) * 100%));transition:transform .38s var(--ease);z-index:-1}
+.tabs button{flex:1;min-width:0;min-height:56px;border:0;background:transparent;flex-direction:column;gap:2px;font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.3px;line-height:1.1;padding:6px 4px;color:var(--muted)}
+.tabs button .ic{width:24px;height:24px}
+.tabs button[aria-selected="true"]{color:var(--court)}
 .tabs button:active{transform:none}
 
 /* pemain */
 .players{display:flex;flex-wrap:wrap;gap:8px}
-.pchip{display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 12px;border-radius:99px;font-weight:800;font-size:14px;background:color-mix(in srgb,var(--c) 16%,var(--surface));color:var(--c);border:2px solid color-mix(in srgb,var(--c) 30%,transparent)}
-.pchip button{width:22px;height:22px;padding:0;border:0;border-radius:50%;background:color-mix(in srgb,var(--c) 22%,transparent);color:inherit;font-size:12px;line-height:1}
+.pchip{display:inline-flex;align-items:center;gap:4px;padding:3px 3px 3px 14px;min-height:var(--tap);border-radius:99px;font-weight:700;font-size:16px;background:color-mix(in srgb,var(--c) 16%,var(--surface));color:var(--c);border:2px solid color-mix(in srgb,var(--c) 30%,transparent)}
+.pchip button{width:36px;height:36px;min-height:36px;padding:0;border:0;border-radius:50%;background:color-mix(in srgb,var(--c) 22%,transparent);color:inherit;font-size:15px;position:relative}
+.pchip button::after{content:"";position:absolute;inset:-4px}
 .add{display:grid;grid-template-columns:1fr auto;gap:8px}
 .seg{display:flex;border:2px solid var(--line);border-radius:14px;overflow:hidden;position:relative;isolation:isolate;background:var(--surface)}
 .seg .pill{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--n,2));border-radius:10px;background:var(--court);transform:translateX(calc(var(--i,0) * 100%));transition:transform .38s var(--ease);z-index:-1}
-.seg button{flex:1;border:0;border-radius:0;background:transparent;padding:8px 6px;font-size:13px}
+.seg button{flex:1;border:0;border-radius:0;background:transparent;padding:8px 6px;font-size:14px;min-height:var(--tap)}
 .seg button[aria-pressed="true"]{color:var(--court-ink)}
 .seg button:active{transform:none}
 .summary{background:var(--soft-blue);border-radius:14px;padding:10px 12px;font-weight:700;font-size:14px}
@@ -105,18 +111,19 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:70
 .game.done{opacity:.55}
 .game.done .match{text-decoration:line-through;text-decoration-thickness:2px}
 .gnum{display:flex;flex-direction:column;align-items:center;min-width:46px}
-.gnum b{font-family:var(--display);font-weight:700;font-size:22px;line-height:1;color:var(--court)}
-.gnum small{font-size:11px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.gnum b{font-family:var(--display);font-weight:700;font-size:30px;line-height:1;color:var(--court)}
+.gnum small{font-size:12px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .gbody{min-width:0;display:flex;flex-direction:column;gap:5px}
 .match{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .team{display:inline-flex;gap:4px;flex-wrap:wrap}
-.n{display:inline-block;padding:2px 9px;border-radius:99px;font-weight:800;font-size:13px;background:color-mix(in srgb,var(--c) 16%,var(--surface));color:var(--c)}
-.vs{font-family:var(--display);font-weight:600;font-size:12px;color:var(--muted)}
-.lap{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-.rest{font-size:12px;color:var(--muted);font-weight:600}
-.tick{width:30px;height:30px;padding:0;border-radius:50%;display:grid;place-items:center;font-size:15px;border:2px solid var(--line);background:var(--surface);color:transparent}
-.tick[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
-.nowtag{font-size:10px;font-weight:800;color:var(--court-ink);background:var(--court);border-radius:99px;padding:1px 7px;margin-top:3px}
+.n{display:inline-block;padding:2px 10px;border-radius:99px;font-weight:700;font-size:15px;background:color-mix(in srgb,var(--c) 16%,var(--surface));color:var(--c)}
+.vs{font-family:var(--display);font-weight:600;font-size:14px;color:var(--muted);text-transform:uppercase}
+.lap{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.rest{font-size:14px;color:var(--muted);font-weight:500}
+.tick{width:var(--tap);height:var(--tap);padding:0;border-radius:50%;font-size:20px;border:2px solid var(--line);background:var(--surface);color:var(--line)}
+.tick .ic{stroke-width:3}
+.tick[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:var(--ok-ink)}
+.nowtag{font-size:11px;font-weight:800;color:var(--court-ink);background:var(--court);border-radius:99px;padding:1px 7px;margin-top:3px}
 .tally{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
 .tally div{border-radius:14px;padding:8px 10px;background:color-mix(in srgb,var(--c) 12%,var(--surface));min-width:0}
 .tally b{display:block;color:var(--c);font-weight:800;overflow-wrap:anywhere}
@@ -143,21 +150,21 @@ details.txt summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight
 /* patungan */
 .kok{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--soft-mint);border-radius:14px;padding:10px 12px}
 .stepper{display:flex;align-items:center;gap:8px}
-.stepper button{width:38px;height:38px;padding:0;font-size:18px}
-.stepper b{font-family:var(--display);font-weight:600;font-size:28px;min-width:36px;text-align:center;font-variant-numeric:tabular-nums}
+.stepper button{width:var(--tap);height:var(--tap);padding:0;font-size:20px}
+.stepper b{font-family:var(--display);font-weight:700;font-size:34px;min-width:36px;text-align:center;font-variant-numeric:tabular-nums}
 .total{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .total div{border-radius:14px;padding:8px 10px;min-width:0}
 .total div:nth-child(1){background:var(--soft-blue)}
 .total div:nth-child(2){background:var(--soft-mint)}
 .total div:nth-child(3){background:var(--soft-sun)}
 .total span{display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-.total strong{font-family:var(--display);font-weight:600;font-size:clamp(14px,4vw,20px);font-variant-numeric:tabular-nums;white-space:nowrap}
+.total strong{font-family:var(--display);font-weight:700;font-size:clamp(17px,5vw,24px);font-variant-numeric:tabular-nums;white-space:nowrap}
 .people{list-style:none;margin:0;padding:0}
 .people li{display:flex;align-items:center;gap:10px;padding:10px 2px;border-top:2px solid var(--line)}
 .people li:first-child{border-top:0}
-.people .money{font-family:var(--display);font-weight:600;font-size:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.people .money{font-family:var(--display);font-weight:700;font-size:22px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .people li.paid .who{text-decoration:line-through;opacity:.6}
-.check{width:22px;height:22px;accent-color:var(--ok);flex:none}
+.check{width:24px;height:24px;accent-color:var(--ok);flex:none}
 /* patungan khusus */
 .sp li{flex-direction:column;align-items:stretch;gap:8px}
 .sp .top{display:flex;align-items:center;gap:10px}
@@ -167,7 +174,7 @@ details.txt summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight
 .sp li.part .times input{border-color:color-mix(in srgb,var(--accent) 60%,var(--line))}
 .tagp{font-size:11px;font-weight:800;color:var(--accent-ink);background:var(--accent);border-radius:99px;padding:1px 8px;white-space:nowrap}
 .brk{font-size:12px;color:var(--muted);font-weight:600;padding-left:32px}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;font-weight:700;z-index:6;width:max-content;max-width:calc(100% - 32px);text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;font-weight:700;z-index:6;width:max-content;max-width:calc(100% - 32px);text-align:center}
 .toast.show{animation:toastIn .35s var(--ease)}
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -178,24 +185,42 @@ details.txt summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-shuttle" viewBox="0 0 24 24"><path d="M5 3h14l-4.5 11h-5z"/><path d="M10 3l1 11M14 3l-1 11"/><circle cx="12" cy="18" r="3.5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="i-timer" viewBox="0 0 24 24"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></symbol>
+  <symbol id="i-court" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M12 5v14M2 12h20"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8M12 17.5v-11"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4M2 6h1.9c1.5 0 2.9.9 3.6 2.2M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8M18 14l4 4-4 4"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-17.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+</svg>
 <div class="wrap">
   <header>
     <div>
-      <h1>Bultang <span>Asik</span><span class="shuttle" aria-hidden="true">🏸</span></h1>
+      <h1>Bultang <span>Asik</span><svg class="ic shuttle" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-shuttle"/></svg></h1>
       <p class="sub">Tabel main adil &amp; patungan lapangan.</p>
+      <span id="sync" class="sync" role="status">Hanya di HP ini</span>
     </div>
     <div class="hdr-right">
-      <span id="sync" class="sync" role="status">Hanya di HP ini</span>
-      <button id="themeBtn" class="icon" aria-label="Ganti mode terang/gelap">🌙</button>
+      <button id="themeBtn" class="icon" aria-label="Ganti mode terang/gelap"></button>
     </div>
   </header>
 
-  <div class="tabs" role="tablist" id="tabs" style="--i:0">
-    <span class="pill" aria-hidden="true"></span>
-    <button role="tab" data-tab="jadwal" aria-selected="true">📋 Tabel main</button>
-    <button role="tab" data-tab="patungan" aria-selected="false">💰 Patungan</button>
-    <button role="tab" data-tab="khusus" aria-selected="false">⏱️ Patungan khusus</button>
-  </div>
 
   <div id="exampleBanner" class="banner" hidden>
     <span>Ini contoh. Ganti nama pemain dan jamnya, tabelnya langsung menyesuaikan.</span>
@@ -205,6 +230,14 @@ details.txt summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight
   <section id="tab-patungan" style="display:flex;flex-direction:column;gap:16px" hidden></section>
   <section id="tab-khusus" style="display:flex;flex-direction:column;gap:16px" hidden></section>
 </div>
+<nav class="tabbar" aria-label="Menu">
+  <div class="tabs" role="tablist" id="tabs" style="--i:0">
+    <span class="pill" aria-hidden="true"></span>
+    <button role="tab" data-tab="jadwal" aria-selected="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-list"/></svg>Tabel</button>
+    <button role="tab" data-tab="patungan" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wallet"/></svg>Patungan</button>
+    <button role="tab" data-tab="khusus" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-timer"/></svg>Patungan khusus</button>
+  </div>
+</nav>
 <div id="toast" class="toast" role="status" hidden></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -220,11 +253,12 @@ const FIREBASE_CONFIG = {
 };
 const APP_URL="https://braynn12.github.io/bultang-asik/";
 const KEY="bultang-v2", THEME_KEY="bultang-theme-v2";
-const COLORS_LIGHT=["#2f80ff","#ff5c8a","#12a874","#c98a00","#8b5cf6","#f97316","#0ea5b7","#e5484d"];
-const COLORS_DARK=["#6aa8ff","#ff7aa2","#b7f34a","#ffcf5a","#b197fc","#ff9d5c","#4fd6e8","#ff6b6b"];
+const COLORS_LIGHT=["#2f80ff","#ff5c8a","#12a874","#c98a00","#8b5cf6","#c026d3","#0ea5b7","#e5484d"];
+const COLORS_DARK=["#6aa8ff","#ff7aa2","#b7f34a","#ffcf5a","#b197fc","#e879f9","#4fd6e8","#ff6b6b"];
 let COLORS=COLORS_DARK;
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const rp=n=>"Rp"+Math.round(n).toLocaleString("id-ID");
 
 /* ---------- state ---------- */
@@ -376,9 +410,9 @@ function renderMatrix(){
   let full=null;{const seen=new Set();const need=ps.length*(ps.length-1)/2;const ids=new Set(ps.map(p=>p.id));
     S.games.some((g,i)=>{g.courts.forEach(c=>[c.a,c.b].forEach(([x,y])=>{if(ids.has(x)&&ids.has(y))seen.add(pk(x,y))}));if(seen.size>=need){full=i+1;return true}})}
   const short=n=>esc(n.length>6?n.slice(0,5)+"…":n);
-  return `<div class="card"><div class="card-title"><b>🤝 Sudah setim berapa kali</b></div>
+  return `<div class="card"><div class="card-title"><b>${ic("grid")}Sudah setim berapa kali</b></div>
     ${miss.length?`<div class="warn">Belum pernah setim: ${esc(miss.join(", "))}. ${S.games.length*S.courts*2<ps.length*(ps.length-1)/2?"Waktu mainnya belum cukup untuk semua kombinasi.":"Tekan Acak susunan lain."}</div>`
-      :`<div class="summary">✅ Semua orang pernah setim dengan semua orang${full?`, lengkap di game ke-${full}`:""}.</div>`}
+      :`<div class="summary">${ic("check-circle")} Semua orang pernah setim dengan semua orang${full?`, lengkap di game ke-${full}`:""}.</div>`}
     <div class="mx-wrap"><table class="mx"><thead><tr><th></th>${ps.map(p=>`<th style="--c:${COLORS[p.c%COLORS.length]}">${short(p.name)}</th>`).join("")}</tr></thead>
     <tbody>${ps.map(a=>`<tr><th style="--c:${COLORS[a.c%COLORS.length]}">${short(a.name)}</th>${ps.map(b=>a.id===b.id?`<td class="self">–</td>`:`<td class="v${Math.min(pc[pk(a.id,b.id)]||0,3)}">${pc[pk(a.id,b.id)]||0}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
     <p class="note">Angka = berapa kali dua orang itu satu tim di tabel ini.</p></div>`;
@@ -387,12 +421,12 @@ function renderJadwal(){
   const n=S.players.length,ng=nGames(S),slots=S.courts*4,tot=totalMin(S);
   const per=n?(ng*slots/n):0;
   let h=`<div class="card">
-    <div class="card-title"><b>👥 Pemain</b><span class="meta">${n} orang · 4–8</span></div>
-    <div class="players">${S.players.map(p=>`<span class="pchip" style="--c:${COLORS[p.c%COLORS.length]}">${esc(p.name)}<button data-del="${p.id}" aria-label="Hapus ${esc(p.name)}">✕</button></span>`).join("")||`<span class="note">Belum ada pemain.</span>`}</div>
+    <div class="card-title"><b>${ic("users")}Pemain</b><span class="meta">${n} orang · 4–8</span></div>
+    <div class="players">${S.players.map(p=>`<span class="pchip" style="--c:${COLORS[p.c%COLORS.length]}">${esc(p.name)}<button data-del="${p.id}" aria-label="Hapus ${esc(p.name)}">${ic("x")}</button></span>`).join("")||`<span class="note">Belum ada pemain.</span>`}</div>
     ${n<8?`<form id="addForm" class="add"><input id="newName" maxlength="16" placeholder="Nama pemain" aria-label="Nama pemain" autocomplete="off"><button class="primary" type="submit">Tambah</button></form>`:`<p class="note">Sudah 8 orang, jumlah maksimal.</p>`}
   </div>
   <div class="card">
-    <div class="card-title"><b>⏰ Waktu main</b><span class="meta">${durText(tot)}</span></div>
+    <div class="card-title"><b>${ic("clock")}Waktu main</b><span class="meta">${durText(tot)}</span></div>
     <div class="grid3">
       <label class="f">Mulai<input type="time" id="f-start" data-f="start" value="${esc(S.start)}"></label>
       <label class="f">Selesai<input type="time" id="f-end" data-f="end" value="${esc(S.end)}"></label>
@@ -401,7 +435,7 @@ function renderJadwal(){
     <div><div class="meta" style="margin-bottom:4px">Lapangan</div>
       <div class="seg" style="--n:2;--i:${S.courts-1}"><span class="pill" aria-hidden="true"></span><button data-courts="1" aria-pressed="${S.courts===1}">1 lapangan</button><button data-courts="2" aria-pressed="${S.courts===2}" ${n<8?"disabled":""}>2 lapangan${n<8?" (butuh 8)":""}</button></div></div>
     ${n<4?`<div class="warn">Tambah ${4-n} pemain lagi, tabel langsung muncul (minimal 4 untuk main ganda).</div>`:`<div class="summary" id="plan"><b>${ng} game</b> dalam ${durText(tot)} · tiap orang main ±${Math.floor(per)}${per%1?"–"+Math.ceil(per):""} kali${n>slots?`, istirahat ${n-slots} orang per game`:", semua main terus"}</div>`}
-    ${n>=4?`<button id="gen">🔀 Acak susunan lain</button><p class="note">Tabel otomatis menyesuaikan setiap pemain atau jam diubah. Game yang sudah dicentang tidak ikut berubah.</p>`:""}
+    ${n>=4?`<button id="gen">${ic("shuffle")}Acak susunan lain</button><p class="note">Tabel otomatis menyesuaikan setiap pemain atau jam diubah. Game yang sudah dicentang tidak ikut berubah.</p>`:""}
   </div>`;
   if(S.games.length){
     const t=tallies(),nowIdx=S.games.findIndex(g=>!g.done);
@@ -411,9 +445,9 @@ function renderJadwal(){
       <div class="gnum"><b>${i+1}</b><small>${gameTime(i)}</small>${i===nowIdx?`<span class="nowtag">Sekarang</span>`:""}</div>
       <div class="gbody">${g.courts.map((c,k)=>`${g.courts.length>1?`<span class="lap">Lapangan ${k+1}</span>`:""}<div class="match"><span class="team">${c.a.map(chip).join("")}</span><span class="vs">vs</span><span class="team">${c.b.map(chip).join("")}</span></div>`).join("")}
         ${g.rest&&g.rest.length?`<div class="rest">Istirahat: ${g.rest.map(nm).map(esc).join(", ")}</div>`:""}</div>
-      <button class="tick" data-done="${i}" aria-pressed="${!!g.done}" aria-label="Tandai game ${i+1} selesai">✓</button>
+      <button class="tick" data-done="${i}" aria-pressed="${!!g.done}" aria-label="Tandai game ${i+1} selesai">${ic("check")}</button>
     </div>`).join("")}</div>
-    <div class="card"><div class="card-title"><b>📊 Pembagian</b><span class="meta">dari ${S.games.length} game</span></div>
+    <div class="card"><div class="card-title"><b>${ic("chart")}Pembagian</b><span class="meta">dari ${S.games.length} game</span></div>
       <div class="tally">${S.players.map(p=>`<div style="--c:${COLORS[p.c%COLORS.length]}"><b>${esc(p.name)}</b><small>main ${t[p.id].main}× · istirahat ${t[p.id].rehat}×</small></div>`).join("")}</div>
     </div>${renderMatrix()}`;
     const day=new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
@@ -421,7 +455,7 @@ function renderJadwal(){
     S.games.forEach((g,i)=>{lines.push(`${i+1}. ${gameTime(i)}  `+g.courts.map((c,k)=>`${g.courts.length>1?`[L${k+1}] `:""}${c.a.map(nm).join(" & ")} vs ${c.b.map(nm).join(" & ")}`).join("  ")+(g.rest&&g.rest.length?`  (rehat: ${g.rest.map(nm).join(", ")})`:""))});
     lines.push("","Jumlah main: "+S.players.map(p=>`${p.name} ${t[p.id].main}×`).join(", "));
     h+=`<details class="txt"><summary>Lihat teks untuk grup</summary><textarea id="tblText" readonly aria-label="Teks tabel">${esc(lines.join("\n"))}</textarea></details>
-      <div class="row"><button class="primary" id="imgMake">🖼️ Kirim sebagai gambar</button><button data-copy="tblText">📋 Salin teks</button><span class="meta copymsg"></span></div>${renderImageCard()}`;
+      <div class="row"><button class="primary" id="imgMake">${ic("image")}Kirim sebagai gambar</button><button data-copy="tblText">${ic("copy")}Salin teks</button><span class="meta copymsg"></span></div>${renderImageCard()}`;
   }
   return h;
 }
@@ -440,18 +474,18 @@ function renderPatungan(){
   const B=S.bill,r=billCalc();
   const paidN=r.rows.filter(x=>B.paid[x.id]).length;
   let h=`<div class="card">
-    <div class="card-title"><b>🏟️ Lapangan</b><span class="meta">${S.courts} lapangan</span></div>
+    <div class="card-title"><b>${ic("court")}Lapangan</b><span class="meta">${S.courts} lapangan</span></div>
     <div class="grid2">
       <label class="f">Sewa per jam (Rp)<input type="number" id="b-court" data-b="courtPrice" inputmode="numeric" min="0" step="1000" value="${B.courtPrice}"></label>
       <label class="f">Lama sewa (jam)<input type="number" id="b-hours" data-b="hours" inputmode="decimal" min="0" step="0.5" value="${+r.hours.toFixed(2)}"></label>
     </div>
-    ${B.hours==null?`<p class="note">Lama sewa otomatis dari waktu main di tab Tabel.</p>`:`<p class="note">Lama sewa diisi manual. <button id="hoursAuto" style="padding:2px 10px;font-size:12px">Ikuti waktu main</button></p>`}
+    ${B.hours==null?`<p class="note">Lama sewa otomatis dari waktu main di tab Tabel.</p>`:`<p class="note">Lama sewa diisi manual. <button id="hoursAuto">Ikuti waktu main</button></p>`}
   </div>
   <div class="card">
-    <div class="card-title"><b>🏸 Kok</b></div>
+    <div class="card-title"><b>${ic("shuttle")}Kok</b></div>
     <label class="f">Harga per buah (Rp)<input type="number" id="b-kokp" data-b="kokPrice" inputmode="numeric" min="0" step="500" value="${B.kokPrice}"></label>
     <div class="kok"><div><b>Kok terpakai</b><div class="meta">Tekan + tiap buka kok baru</div></div>
-      <div class="stepper"><button data-kok="-1" aria-label="Kurangi kok">−</button><b>${B.kok}</b><button data-kok="1" aria-label="Tambah kok">+</button></div></div>
+      <div class="stepper"><button data-kok="-1" aria-label="Kurangi kok">${ic("minus")}</button><b>${B.kok}</b><button data-kok="1" aria-label="Tambah kok">${ic("plus")}</button></div></div>
   </div>
   <div class="card">
     <div><div class="meta" style="margin-bottom:4px">Cara bagi</div>
@@ -460,7 +494,7 @@ function renderPatungan(){
       <div class="seg" style="--n:4;--i:${Math.max(0,[1,500,1000,5000].indexOf(B.round))}"><span class="pill" aria-hidden="true"></span>${[[1,"Tanpa"],[500,"500"],[1000,"1.000"],[5000,"5.000"]].map(([v,l])=>`<button data-round="${v}" aria-pressed="${B.round===v}">${l}</button>`).join("")}</div></div>
   </div>
   <div class="total"><div><span>Lapangan</span><strong>${rp(r.court)}</strong></div><div><span>Kok</span><strong>${rp(r.kok)}</strong></div><div><span>Total</span><strong>${rp(r.total)}</strong></div></div>
-  <div class="card"><div class="card-title"><b>👛 Per orang</b><span class="meta">${paidN}/${r.rows.length} lunas</span></div>
+  <div class="card"><div class="card-title"><b>${ic("receipt")}Per orang</b><span class="meta">${paidN}/${r.rows.length} lunas</span></div>
     ${r.rows.length?`<ul class="people">${r.rows.map(x=>`<li class="${B.paid[x.id]?"paid":""}"><input type="checkbox" class="check" id="pay-${x.id}" data-paid="${x.id}" ${B.paid[x.id]?"checked":""}><label for="pay-${x.id}" class="grow who"><span class="n" style="--c:${colorOf(x.id)}">${esc(nm(x.id))}</span> <span class="meta">${x.main}× main</span></label><span class="money">${rp(x.amt)}</span></li>`).join("")}</ul>`:`<p class="note">Tambahkan pemain di tab Tabel dulu.</p>`}
     ${r.collected>r.total?`<p class="note">Pembulatan menyisakan ${rp(r.collected-r.total)}.</p>`:""}
   </div>`;
@@ -468,7 +502,7 @@ function renderPatungan(){
     const day=new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
     const txt=[`🏸 Patungan Bultang Asik, ${day}`,`Lapangan: ${S.courts} × ${+r.hours.toFixed(2)} jam × ${rp(B.courtPrice)} = ${rp(r.court)}`,`Kok: ${B.kok} × ${rp(B.kokPrice)} = ${rp(r.kok)}`,`Total: ${rp(r.total)}`,"",...r.rows.map((x,i)=>`${i+1}. ${nm(x.id)}: ${rp(x.amt)}${B.paid[x.id]?" ✅":""}`)].join("\n");
     h+=`<details class="txt"><summary>Lihat teks untuk grup</summary><textarea id="billText" readonly aria-label="Teks patungan">${esc(txt)}</textarea></details>
-      <div class="row"><button class="primary" data-copy="billText">📋 Salin tagihan ke WhatsApp</button><span class="meta copymsg"></span></div>`;
+      <div class="row"><button class="primary" data-copy="billText">${ic("copy")}Salin tagihan ke WhatsApp</button><span class="meta copymsg"></span></div>`;
   }
   return h;
 }
@@ -503,13 +537,13 @@ function renderKhusus(){
   const paidN=r.rows.filter(x=>B.paidK[x.id]).length,partN=r.rows.filter(x=>x.part).length;
   let h=`<div class="summary">Untuk yang mainnya tidak full. Biaya lapangan dibagi sesuai jam: tiap jam dibayar oleh orang yang sedang main saat itu. Kok tetap dibagi rata.</div>
   <div class="card">
-    <div class="card-title"><b>🏟️ Sewa</b><span class="meta">${fmt(r.st)}–${fmt(r.st+r.dur)} · ${durText(r.dur)}</span></div>
+    <div class="card-title"><b>${ic("court")}Sewa</b><span class="meta">${fmt(r.st)}–${fmt(r.st+r.dur)} · ${durText(r.dur)}</span></div>
     <p class="note">${S.courts} lapangan × ${+r.hours.toFixed(2)} jam × ${rp(B.courtPrice)} = <b>${rp(r.court)}</b>. Harga dan lama sewa diubah di tab Patungan.</p>
     <div class="kok"><div><b>Kok terpakai</b><div class="meta">${rp(B.kokPrice)} per buah, dibagi rata</div></div>
-      <div class="stepper"><button data-kok="-1" aria-label="Kurangi kok">−</button><b>${B.kok}</b><button data-kok="1" aria-label="Tambah kok">+</button></div></div>
+      <div class="stepper"><button data-kok="-1" aria-label="Kurangi kok">${ic("minus")}</button><b>${B.kok}</b><button data-kok="1" aria-label="Tambah kok">${ic("plus")}</button></div></div>
   </div>
   <div class="total"><div><span>Lapangan</span><strong>${rp(r.court)}</strong></div><div><span>Kok</span><strong>${rp(r.kok)}</strong></div><div><span>Total</span><strong>${rp(r.total)}</strong></div></div>
-  <div class="card"><div class="card-title"><b>⏱️ Jam main per orang</b><span class="meta">${paidN}/${r.rows.length} lunas</span></div>
+  <div class="card"><div class="card-title"><b>${ic("timer")}Jam main per orang</b><span class="meta">${paidN}/${r.rows.length} lunas</span></div>
     <p class="note">Ubah jam datang/pulang orang yang tidak main full. Yang lain biarkan saja.</p>
     ${r.rows.length?`<ul class="people sp">${r.rows.map(x=>`<li class="${B.paidK[x.id]?"paid":""}${x.part?" part":""}">
       <div class="top"><input type="checkbox" class="check" id="payk-${x.id}" data-paidk="${x.id}" ${B.paidK[x.id]?"checked":""}><label for="payk-${x.id}" class="grow who"><span class="n" style="--c:${colorOf(x.id)}">${esc(nm(x.id))}</span> ${x.part?`<span class="tagp">${durText(x.min)}</span>`:`<span class="meta">full</span>`}</label><span class="money">${rp(x.amt)}</span></div>
@@ -524,7 +558,7 @@ function renderKhusus(){
     const txt=[`🏸 Patungan Bultang Asik, ${day}`,`Lapangan: ${S.courts} × ${+r.hours.toFixed(2)} jam × ${rp(B.courtPrice)} = ${rp(r.court)} (dibagi sesuai jam main)`,`Kok: ${B.kok} × ${rp(B.kokPrice)} = ${rp(r.kok)} (dibagi rata)`,`Total: ${rp(r.total)}`,"",
       ...r.rows.map((x,i)=>`${i+1}. ${nm(x.id)}: ${rp(x.amt)}${x.part?` (${fmt(r.st+x.f)}–${fmt(r.st+x.to)})`:""}${B.paidK[x.id]?" ✅":""}`)].join("\n");
     h+=`<details class="txt"><summary>Lihat teks untuk grup</summary><textarea id="billKText" readonly aria-label="Teks patungan khusus">${esc(txt)}</textarea></details>
-      <div class="row"><button class="primary" data-copy="billKText">📋 Salin tagihan ke WhatsApp</button>${partN?`<button id="allFull">Semua full</button>`:""}<span class="meta copymsg"></span></div>`;
+      <div class="row"><button class="primary" data-copy="billKText">${ic("copy")}Salin tagihan ke WhatsApp</button>${partN?`<button id="allFull">Semua full</button>`:""}<span class="meta copymsg"></span></div>`;
   }
   return h;
 }
@@ -532,7 +566,7 @@ function renderKhusus(){
 let imgFile=null,imgURL=null,imgSig="";
 const tableSig=()=>JSON.stringify([S.games.map(g=>g.courts),S.players.map(p=>[p.id,p.name,p.c]),S.start,S.minutes]);
 function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
-function mix(hex,a){const n=parseInt(hex.slice(1),16),r=n>>16,g=n>>8&255,b=n&255,R=20,G=27,Bb=36;return `rgb(${Math.round(R+(r-R)*a)},${Math.round(G+(g-G)*a)},${Math.round(Bb+(b-Bb)*a)})`}
+function mix(hex,a){const n=parseInt(hex.slice(1),16),r=n>>16,g=n>>8&255,b=n&255,R=25,G=33,Bb=52;return `rgb(${Math.round(R+(r-R)*a)},${Math.round(G+(g-G)*a)},${Math.round(Bb+(b-Bb)*a)})`}
 async function makeImage(){
   try{await document.fonts.ready}catch(e){}
   const W=1080,P=44,two=S.courts===2;
@@ -540,13 +574,13 @@ async function makeImage(){
   const H=headH+S.games.length*(rowH+14)+footH;
   const cv=document.createElement("canvas");cv.width=W;cv.height=H;
   const c=cv.getContext("2d");
-  const D='"Fredoka","Nunito",system-ui,sans-serif',B='"Nunito",system-ui,sans-serif';
-  const keepC=COLORS;COLORS=COLORS_DARK;c.fillStyle="#0b1016";c.fillRect(0,0,W,H);
+  const D='"Barlow Condensed","Barlow",system-ui,sans-serif',B='"Barlow",system-ui,sans-serif';
+  const keepC=COLORS;COLORS=COLORS_DARK;c.fillStyle="#0F172A";c.fillRect(0,0,W,H);
   // header
-  c.fillStyle="#f2f5f7";c.font=`700 64px ${D}`;c.textBaseline="alphabetic";c.fillText("Bultang",P,96);
-  const bw=c.measureText("Bultang ").width;c.fillStyle="#b7f34a";c.fillText("Asik 🏸",P+bw,96);
+  c.fillStyle="#F8FAFC";c.font=`700 72px ${D}`;c.textBaseline="alphabetic";c.fillText("BULTANG",P,96);
+  const bw=c.measureText("BULTANG ").width;c.fillStyle="#F97316";c.fillText("ASIK",P+bw,96);
   const day=new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
-  c.fillStyle="#8d98a6";c.font=`700 28px ${B}`;
+  c.fillStyle="#94A3B8";c.font=`700 28px ${B}`;
   c.fillText(`${day} · ${fmt(toMin(S.start))}–${fmt(toMin(S.end))} WIB`,P,144);
   c.fillText(`${S.games.length} game · ±${S.minutes} menit per game · ${S.players.length} pemain${two?" · 2 lapangan":""}`,P,182);
   // chips
@@ -559,39 +593,39 @@ async function makeImage(){
   };
   let y=headH;
   S.games.forEach((g,i)=>{
-    c.fillStyle="#141b24";rr(c,P,y,W-2*P,rowH,24);c.fill();
-    c.strokeStyle="#232d39";c.lineWidth=2;c.stroke();
+    c.fillStyle="#192134";rr(c,P,y,W-2*P,rowH,24);c.fill();
+    c.strokeStyle="#2A3448";c.lineWidth=2;c.stroke();
     // nomor + jam
-    c.fillStyle="#b7f34a";c.font=`700 44px ${D}`;c.textAlign="center";c.fillText(String(i+1),P+62,y+(two?78:62));
-    c.fillStyle="#8d98a6";c.font=`700 22px ${B}`;c.fillText(gameTime(i),P+62,y+(two?110:94));c.textAlign="left";
-    c.fillStyle="#232d39";c.fillRect(P+122,y+18,3,rowH-36);
+    c.fillStyle="#F97316";c.font=`700 44px ${D}`;c.textAlign="center";c.fillText(String(i+1),P+62,y+(two?78:62));
+    c.fillStyle="#94A3B8";c.font=`700 22px ${B}`;c.fillText(gameTime(i),P+62,y+(two?110:94));c.textAlign="left";
+    c.fillStyle="#2A3448";c.fillRect(P+122,y+18,3,rowH-36);
     let x0=P+146,yy=y+(two?20:18);
     g.courts.forEach((ct,k)=>{
       let x=x0;
-      if(two){c.fillStyle="#8d98a6";c.font=`800 20px ${B}`;c.fillText("L"+(k+1),x,yy+31);x+=40}
+      if(two){c.fillStyle="#94A3B8";c.font=`800 20px ${B}`;c.fillText("L"+(k+1),x,yy+31);x+=40}
       x+=chip(ct.a[0],x,yy)+8;x+=chip(ct.a[1],x,yy)+14;
-      c.fillStyle="#8d98a6";c.font=`600 26px ${D}`;c.fillText("vs",x,yy+33);x+=c.measureText("vs").width+14;
+      c.fillStyle="#94A3B8";c.font=`600 26px ${D}`;c.fillText("vs",x,yy+33);x+=c.measureText("vs").width+14;
       x+=chip(ct.b[0],x,yy)+8;chip(ct.b[1],x,yy);
       yy+=62;
     });
-    if(g.rest&&g.rest.length){c.fillStyle="#8d98a6";c.font=`700 24px ${B}`;
-      let txt="💤 Istirahat: "+g.rest.map(nm).join(", ");while(c.measureText(txt).width>W-2*P-170&&txt.length>10)txt=txt.slice(0,-2);
+    if(g.rest&&g.rest.length){c.fillStyle="#94A3B8";c.font=`700 24px ${B}`;
+      let txt="Istirahat: "+g.rest.map(nm).join(", ");while(c.measureText(txt).width>W-2*P-170&&txt.length>10)txt=txt.slice(0,-2);
       c.fillText(txt,x0,yy+28)}
     y+=rowH+14;
   });
   // ringkasan jumlah main
   const t=tallies();y+=16;
-  c.fillStyle="#f2f5f7";c.font=`700 34px ${D}`;c.fillText("Jumlah main",P,y+34);y+=58;
+  c.fillStyle="#F8FAFC";c.font=`700 34px ${D}`;c.fillText("Jumlah main",P,y+34);y+=58;
   const cw=(W-2*P-3*12)/4;
   S.players.forEach((p,i)=>{
     const col=COLORS[p.c%COLORS.length],x=P+(i%4)*(cw+12),yy=y+Math.floor(i/4)*70;
     c.fillStyle=mix(col,.12);rr(c,x,yy,cw,58,16);c.fill();
     let name=p.name;c.font=`800 26px ${B}`;while(c.measureText(name+"  "+t[p.id].main+"×").width>cw-24&&name.length>3)name=name.slice(0,-2)+"…";
     c.fillStyle=col;c.fillText(name,x+14,yy+38);
-    c.fillStyle="#f2f5f7";c.font=`700 26px ${D}`;c.textAlign="right";c.fillText(t[p.id].main+"×",x+cw-14,yy+38);c.textAlign="left";
+    c.fillStyle="#F8FAFC";c.font=`700 26px ${D}`;c.textAlign="right";c.fillText(t[p.id].main+"×",x+cw-14,yy+38);c.textAlign="left";
   });
   y+=tallyRows*70+24;
-  c.fillStyle="#6b7684";c.font=`600 22px ${B}`;c.fillText("Dibuat dengan Bultang Asik · "+APP_URL.replace(/^https?:\/\//,"").replace(/\/$/,""),P,y+20);
+  c.fillStyle="#64748B";c.font=`600 22px ${B}`;c.fillText("Dibuat dengan Bultang Asik · "+APP_URL.replace(/^https?:\/\//,"").replace(/\/$/,""),P,y+20);
   COLORS=keepC;
   const blob=await new Promise(r=>cv.toBlob(r,"image/png"));
   if(imgURL)URL.revokeObjectURL(imgURL);
@@ -601,9 +635,9 @@ async function makeImage(){
 function renderImageCard(){
   if(!imgURL||imgSig!==tableSig())return "";
   const canShare=!!(navigator.canShare&&navigator.canShare({files:[imgFile]}));
-  return `<div class="card" id="imgCard"><div class="card-title"><b>🖼️ Gambar tabel</b><button id="imgClose" style="padding:4px 10px;font-size:13px">Tutup</button></div>
+  return `<div class="card" id="imgCard"><div class="card-title"><b>${ic("image")}Gambar tabel</b><button id="imgClose">${ic("x")}Tutup</button></div>
     <img src="${imgURL}" alt="Gambar tabel main" class="imgprev">
-    <div class="row">${canShare?`<button class="primary" id="imgShare">📤 Bagikan ke WhatsApp</button>`:""}<a class="btnlink${canShare?"":" primary"}" href="${imgURL}" download="tabel-bultang-asik.png">⬇️ Simpan gambar</a></div>
+    <div class="row">${canShare?`<button class="primary" id="imgShare">${ic("share")}Bagikan ke WhatsApp</button>`:""}<a class="btnlink${canShare?"":" primary"}" href="${imgURL}" download="tabel-bultang-asik.png">${ic("download")}Simpan gambar</a></div>
     <p class="note">${canShare?"Pilih WhatsApp lalu grupnya.":"Simpan gambarnya, lalu kirim lewat WhatsApp."}</p></div>`;
 }
 function render(){
@@ -654,7 +688,7 @@ document.addEventListener("click",e=>{
   }
   if(t.dataset.del){S.players=S.players.filter(p=>p.id!==t.dataset.del);if(S.players.length<8)S.courts=1;touch();regenerate()}
   else if(t.dataset.courts){if(S.courts===+t.dataset.courts)return;S.courts=+t.dataset.courts;touch();regenerate()}
-  else if(t.id==="gen"){touch();regenerate();showToast("Susunan baru dibuat 🔀")}
+  else if(t.id==="gen"){touch();regenerate();showToast("Susunan baru dibuat")}
   else if(t.dataset.done){const g=S.games[+t.dataset.done];g.done=!g.done;touch()}
   else if(t.dataset.kok){S.bill.kok=Math.max(0,S.bill.kok+ +t.dataset.kok);touch()}
   else if(t.dataset.mode){S.bill.mode=t.dataset.mode;touch()}
@@ -702,8 +736,8 @@ document.addEventListener("input",e=>{
 /* ---------- tema ---------- */
 function applyTheme(t){
   document.documentElement.setAttribute("data-theme",t);
-  const b=document.getElementById("themeBtn");if(b)b.textContent=t==="dark"?"☀️":"🌙";
-  const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#0b1016":"#f5f7f2";
+  const b=document.getElementById("themeBtn");if(b)b.innerHTML=ic(t==="dark"?"sun":"moon");
+  const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#0F172A":"#FFF7ED";
   COLORS=t==="dark"?COLORS_DARK:COLORS_LIGHT;
   if(typeof S!=="undefined"&&S)render();
 }

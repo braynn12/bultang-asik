@@ -262,7 +262,8 @@ button.tile:hover{border-color:var(--court)}
   <div class="splash-in">
     <div class="rally" aria-hidden="true"><span class="floor"></span><span class="net"></span><span class="fly"><span class="lift" style="display:block"><svg class="ic sh" viewBox="0 0 24 24"><use href="#i-shuttle"/></svg></span></span></div>
     <b class="splash-word">Bultang <span>Asik</span></b>
-    <span class="meta">Mengambil tabel grup…</span>
+    <span class="meta" id="splashMsg">Mengambil tabel grup…</span>
+    <button id="splashSkip" hidden>Buka pakai data di HP ini</button>
   </div>
 </div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -498,17 +499,24 @@ function startSync(){
 /* aksi yang mengubah data (pintasan "Tambah kok") ditunda sampai data grup terbaru masuk,
    supaya tidak tertimpa snapshot Firebase atau malah menimpa data orang lain */
 let pendingKok=false,firstSyncDone=false;
-// layar pembuka minimal ±0,6 detik sejak halaman dibuka supaya tidak sekadar berkedip
+// layar pembuka tampil minimal 2,5 detik sejak halaman dibuka, lalu bertahan sampai data grup
+// dari Firebase masuk. Setelah 10 detik tanpa data, muncul tombol untuk masuk pakai data di HP.
+const SPLASH_MIN=2500,SPLASH_SLOW=10000;
 let splashDone=false;
-function hideSplash(){
+function hideSplash(now){
   if(splashDone)return;splashDone=true;
   const el=document.getElementById("splash");if(!el)return;
   setTimeout(()=>{
     el.classList.add("out");setTimeout(()=>el.remove(),400);
     const s=document.getElementById("tab-"+tab);s.classList.remove("enter");void s.offsetWidth;s.classList.add("enter");setTimeout(()=>s.classList.remove("enter"),600);
-  },Math.max(0,600-performance.now()));
+  },now?0:Math.max(0,SPLASH_MIN-performance.now()));
 }
-setTimeout(hideSplash,4000); // Firebase lambat: jangan tahan pengguna, status sinkron tetap terlihat di header
+setTimeout(()=>{
+  if(splashDone)return;
+  document.getElementById("splashMsg").textContent="Koneksi lambat, masih menunggu data grup…";
+  const b=document.getElementById("splashSkip");b.hidden=false;b.focus();
+},SPLASH_SLOW);
+document.getElementById("splashSkip").addEventListener("click",()=>hideSplash(true));
 function afterFirstSync(){
   hideSplash();
   if(firstSyncDone)return;firstSyncDone=true;

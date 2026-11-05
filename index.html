@@ -281,6 +281,11 @@ const APP_URL="https://braynn12.github.io/bultang-asik/";
 const KEY="bultang-v2", THEME_KEY="bultang-theme-v2", TIP_KEY="bultang-ios-tip";
 const IS_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
 const STANDALONE=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
+const CAN_SHARE=typeof navigator.share==="function";
+// tombol tagihan: share sheet bawaan HP kalau ada, salin tetap tersedia sebagai cadangan
+const billBtns=id=>CAN_SHARE
+  ?`<button class="primary" data-share="${id}">${ic(IS_IOS?"ios-share":"share")}Bagikan tagihan</button><button data-copy="${id}">${ic("copy")}Salin</button>`
+  :`<button class="primary" data-copy="${id}">${ic("copy")}Salin tagihan ke WhatsApp</button>`;
 const HAS_TOUCH="ontouchstart" in window||navigator.maxTouchPoints>0;
 document.documentElement.classList.toggle("ios",IS_IOS);
 document.documentElement.classList.toggle("standalone",STANDALONE);
@@ -488,7 +493,7 @@ function renderJadwal(){
     S.games.forEach((g,i)=>{lines.push(`${i+1}. ${gameTime(i)}  `+g.courts.map((c,k)=>`${g.courts.length>1?`[L${k+1}] `:""}${c.a.map(nm).join(" & ")} vs ${c.b.map(nm).join(" & ")}`).join("  ")+(g.rest&&g.rest.length?`  (rehat: ${g.rest.map(nm).join(", ")})`:""))});
     lines.push("","Jumlah main: "+S.players.map(p=>`${p.name} ${t[p.id].main}×`).join(", "));
     h+=`<details class="txt"><summary>Lihat teks untuk grup</summary><textarea id="tblText" readonly aria-label="Teks tabel">${esc(lines.join("\n"))}</textarea></details>
-      <div class="row"><button class="primary" id="imgMake">${ic("image")}Kirim sebagai gambar</button><button data-copy="tblText">${ic("copy")}Salin teks</button><span class="meta copymsg"></span></div>${renderImageCard()}`;
+      <div class="row"><button class="primary" id="imgMake">${ic("image")}Kirim sebagai gambar</button>${CAN_SHARE?`<button data-share="tblText">${ic(IS_IOS?"ios-share":"share")}Bagikan teks</button>`:`<button data-copy="tblText">${ic("copy")}Salin teks</button>`}<span class="meta copymsg"></span></div>${renderImageCard()}`;
   }
   return h;
 }
@@ -535,7 +540,7 @@ function renderPatungan(){
     const day=new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
     const txt=[`🏸 Patungan Bultang Asik, ${day}`,`Lapangan: ${S.courts} × ${+r.hours.toFixed(2)} jam × ${rp(B.courtPrice)} = ${rp(r.court)}`,`Kok: ${B.kok} × ${rp(B.kokPrice)} = ${rp(r.kok)}`,`Total: ${rp(r.total)}`,"",...r.rows.map((x,i)=>`${i+1}. ${nm(x.id)}: ${rp(x.amt)}${B.paid[x.id]?" ✅":""}`)].join("\n");
     h+=`<details class="txt"><summary>Lihat teks untuk grup</summary><textarea id="billText" readonly aria-label="Teks patungan">${esc(txt)}</textarea></details>
-      <div class="row"><button class="primary" data-copy="billText">${ic("copy")}Salin tagihan ke WhatsApp</button><span class="meta copymsg"></span></div>`;
+      <div class="row">${billBtns("billText")}<span class="meta copymsg"></span></div>`;
   }
   return h;
 }
@@ -591,7 +596,7 @@ function renderKhusus(){
     const txt=[`🏸 Patungan Bultang Asik, ${day}`,`Lapangan: ${S.courts} × ${+r.hours.toFixed(2)} jam × ${rp(B.courtPrice)} = ${rp(r.court)} (dibagi sesuai jam main)`,`Kok: ${B.kok} × ${rp(B.kokPrice)} = ${rp(r.kok)} (dibagi rata)`,`Total: ${rp(r.total)}`,"",
       ...r.rows.map((x,i)=>`${i+1}. ${nm(x.id)}: ${rp(x.amt)}${x.part?` (${fmt(r.st+x.f)}–${fmt(r.st+x.to)})`:""}${B.paidK[x.id]?" ✅":""}`)].join("\n");
     h+=`<details class="txt"><summary>Lihat teks untuk grup</summary><textarea id="billKText" readonly aria-label="Teks patungan khusus">${esc(txt)}</textarea></details>
-      <div class="row"><button class="primary" data-copy="billKText">${ic("copy")}Salin tagihan ke WhatsApp</button>${partN?`<button id="allFull">Semua full</button>`:""}<span class="meta copymsg"></span></div>`;
+      <div class="row">${billBtns("billKText")}${partN?`<button id="allFull">Semua full</button>`:""}<span class="meta copymsg"></span></div>`;
   }
   return h;
 }
@@ -706,6 +711,14 @@ document.addEventListener("click",e=>{
   if(t.id==="imgClose"){imgSig="";render();return}
   if(t.id==="imgShare"){
     navigator.share({files:[imgFile],title:"Tabel main Bultang Asik"}).catch(err=>{if(err&&err.name!=="AbortError")showToast("Tidak bisa membagikan, pakai Simpan gambar")});
+    return;
+  }
+  if(t.dataset.share){
+    const ta=document.getElementById(t.dataset.share);if(!ta)return;
+    navigator.share({text:ta.value}).then(()=>haptic()).catch(err=>{
+      if(err&&err.name==="AbortError")return; // pengguna menutup share sheet
+      try{navigator.clipboard.writeText(ta.value).then(()=>showToast("Tidak bisa membagikan, teks sudah disalin"),()=>showToast("Tidak bisa membagikan"))}catch(e2){showToast("Tidak bisa membagikan")}
+    });
     return;
   }
   if(t.dataset.copy){

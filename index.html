@@ -94,6 +94,12 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:70
 .tabs button .ic{width:24px;height:24px}
 .tabs button[aria-selected="true"]{color:var(--court)}
 .tabs button:active{transform:none}
+/* geser di tab bar: sorotan ikut jari, sedikit membesar seperti tab bar iOS */
+.tabs{touch-action:none;-webkit-user-select:none;user-select:none}
+.tabs .pill{transition:transform .38s var(--ease),background-color .2s var(--ease)}
+.tabs.drag .pill{transition:background-color .2s var(--ease);background:color-mix(in srgb,var(--accent) 26%,transparent)}
+.tabs.drag button[aria-selected="true"]{color:var(--muted)}
+.tabs.drag button.hot{color:var(--court)}
 
 /* pemain */
 .players{display:flex;flex-wrap:wrap;gap:8px}
@@ -1094,6 +1100,35 @@ document.addEventListener("touchend",()=>{
   }
 },{passive:true});
 document.addEventListener("touchcancel",()=>{swipeReset(sw);sw=null},{passive:true});
+
+/* ---------- geser di tab bar bawah ----------
+   Tekan lalu geser: sorotan ikut jari, getar halus tiap melewati tab, lepas untuk pindah.
+   Ketuk biasa tetap ditangani handler klik; klik yang menyusul sebuah geseran diabaikan. */
+(function(){
+  const bar=document.getElementById("tabs"),pill=bar.querySelector(".pill"),btns=[...bar.querySelectorAll("button")];
+  let d=null,dragEnd=0;
+  const idxAt=(x,r)=>Math.max(0,Math.min(TABS.length-1,Math.floor((x-r.left)/(r.width/TABS.length))));
+  bar.addEventListener("pointerdown",e=>{if(e.button)return;d={x:e.clientX,id:e.pointerId,on:false,hot:TABS.indexOf(tab)}});
+  // move/up didengar di window: jari boleh keluar dari tab bar selama menggeser
+  window.addEventListener("pointermove",e=>{
+    if(!d||e.pointerId!==d.id)return;
+    if(!d.on){if(Math.abs(e.clientX-d.x)<8)return;d.on=true;try{bar.setPointerCapture(d.id)}catch(_){}bar.classList.add("drag")}
+    const r=bar.getBoundingClientRect(),w=r.width/TABS.length;
+    pill.style.transform=`translateX(${Math.max(0,Math.min(r.width-w,e.clientX-r.left-w/2))}px) scale(1.08)`;
+    const h=idxAt(e.clientX,r);
+    if(h!==d.hot){d.hot=h;haptic()}
+    btns.forEach((b,i)=>b.classList.toggle("hot",i===h));
+  });
+  const end=e=>{
+    if(!d||e.pointerId!==d.id)return;const s=d;d=null;
+    if(!s.on)return;
+    dragEnd=Date.now();
+    bar.classList.remove("drag");pill.style.transform="";btns.forEach(b=>b.classList.remove("hot"));
+    if(e.type==="pointerup"&&TABS[s.hot]!==tab)setTab(TABS[s.hot]);
+  };
+  window.addEventListener("pointerup",end);window.addEventListener("pointercancel",end);
+  bar.addEventListener("click",e=>{if(Date.now()-dragEnd<350)e.stopPropagation()},true);
+})();
 
 /* ---------- tema ---------- */
 function applyTheme(t){

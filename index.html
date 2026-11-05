@@ -7,8 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Bultang Asik">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230F172A'/%3E%3Cpath d='M20 18 L32 40 L44 18 Z' fill='%23F8FAFC' opacity='.9'/%3E%3Ccircle cx='32' cy='44' r='7' fill='%23F97316'/%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%230F172A'/%3E%3Cpath d='M20 18 L32 40 L44 18 Z' fill='%23F8FAFC' opacity='.9'/%3E%3Ccircle cx='32' cy='44' r='7' fill='%23F97316'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <title>Bultang Asik</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700;800&display=swap">
@@ -179,7 +182,23 @@ details.txt summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .enter>*{animation:rise .4s var(--ease) both}
-.games.enter .game{animation:rise .4s var(--ease) both}
+.games.enter .gwrap{animation:rise .4s var(--ease) both}
+/* geser kartu game */
+.gwrap{position:relative;border-radius:18px}
+.wrap{overflow-x:clip}
+.game{position:relative;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.gswipe{position:absolute;inset:0;border-radius:18px;background:var(--soft-mint);color:var(--ok);display:flex;align-items:center;gap:8px;padding-left:20px;font-family:var(--display);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.3px;opacity:0;transition:opacity .2s var(--ease),background-color .2s var(--ease),color .2s var(--ease)}
+.gswipe .ic{width:22px;height:22px;stroke-width:3}
+.gwrap.swiping .gswipe{opacity:1}
+.gwrap.armed .gswipe{background:var(--ok);color:var(--ok-ink)}
+.game{transition:opacity .3s var(--ease),background-color .3s var(--ease),border-color .3s var(--ease),transform .3s var(--ease)}
+/* iOS */
+.ios .check[switch]{width:auto;height:auto;accent-color:var(--ok)}
+.standalone body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:#0F172A;z-index:20}
+.ios-tip{border-style:solid;border-color:color-mix(in srgb,var(--accent) 50%,var(--line));flex-wrap:nowrap}
+.ios-tip img{border-radius:10px;flex:none}
+.ios-tip .ic{color:var(--court)}
+html{-webkit-text-size-adjust:100%}
 @media (max-width:420px){.grid3{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3 .last{grid-column:1/-1}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
@@ -203,6 +222,7 @@ details.txt summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight
   <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
   <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-ios-share" viewBox="0 0 24 24"><path d="M8 9H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-2M16 6l-4-4-4 4M12 2v13"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
@@ -221,6 +241,12 @@ details.txt summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight
     </div>
   </header>
 
+
+  <div id="iosTip" class="banner ios-tip" hidden>
+    <img src="icon-180.png" alt="" width="44" height="44">
+    <span class="grow">Pasang di iPhone biar seperti aplikasi: ketuk <svg class="ic" viewBox="0 0 24 24" aria-label="ikon Bagikan" role="img"><use href="#i-ios-share"/></svg> <b>Bagikan</b>, lalu pilih <b>Tambah ke Layar Utama</b>.</span>
+    <button id="iosTipClose" class="icon" aria-label="Tutup panduan"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
 
   <div id="exampleBanner" class="banner" hidden>
     <span>Ini contoh. Ganti nama pemain dan jamnya, tabelnya langsung menyesuaikan.</span>
@@ -252,7 +278,12 @@ const FIREBASE_CONFIG = {
   appId: "1:683603449833:web:97d33a0551a91e8d1f1d78"
 };
 const APP_URL="https://braynn12.github.io/bultang-asik/";
-const KEY="bultang-v2", THEME_KEY="bultang-theme-v2";
+const KEY="bultang-v2", THEME_KEY="bultang-theme-v2", TIP_KEY="bultang-ios-tip";
+const IS_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const STANDALONE=navigator.standalone===true||(window.matchMedia&&matchMedia("(display-mode: standalone)").matches);
+const HAS_TOUCH="ontouchstart" in window||navigator.maxTouchPoints>0;
+document.documentElement.classList.toggle("ios",IS_IOS);
+document.documentElement.classList.toggle("standalone",STANDALONE);
 const COLORS_LIGHT=["#2f80ff","#ff5c8a","#12a874","#c98a00","#8b5cf6","#c026d3","#0ea5b7","#e5484d"];
 const COLORS_DARK=["#6aa8ff","#ff7aa2","#b7f34a","#ffcf5a","#b197fc","#e879f9","#4fd6e8","#ff6b6b"];
 let COLORS=COLORS_DARK;
@@ -392,6 +423,7 @@ function startSync(){
 
 /* ---------- tampilan ---------- */
 let tab="jadwal",enterGames=false,toastT=null;
+const TABS=["jadwal","patungan","khusus"];
 const nm=id=>S.names[id]||"?";
 const colorOf=id=>{const p=S.players.find(x=>x.id===id);return COLORS[(p?p.c:Object.keys(S.names).indexOf(id))%COLORS.length]};
 const chip=id=>`<span class="n" style="--c:${colorOf(id)}">${esc(nm(id))}</span>`;
@@ -441,12 +473,13 @@ function renderJadwal(){
     const t=tallies(),nowIdx=S.games.findIndex(g=>!g.done);
     const doneN=S.games.filter(g=>g.done).length;
     h+=`<div class="row between"><h2>Tabel main</h2><span class="meta">${doneN}/${S.games.length} selesai</span></div>
-    <div class="games${enterGames?" enter":""}">${S.games.map((g,i)=>`<div class="game${g.done?" done":""}${i===nowIdx?" now":""}" style="animation-delay:${Math.min(i,12)*30}ms">
+    <div class="games${enterGames?" enter":""}">${S.games.map((g,i)=>`<div class="gwrap" style="animation-delay:${Math.min(i,12)*30}ms"><div class="gswipe" aria-hidden="true">${ic(g.done?"x":"check")}<span>${g.done?"Batal selesai":"Selesai"}</span></div><div class="game${g.done?" done":""}${i===nowIdx?" now":""}" data-i="${i}">
       <div class="gnum"><b>${i+1}</b><small>${gameTime(i)}</small>${i===nowIdx?`<span class="nowtag">Sekarang</span>`:""}</div>
       <div class="gbody">${g.courts.map((c,k)=>`${g.courts.length>1?`<span class="lap">Lapangan ${k+1}</span>`:""}<div class="match"><span class="team">${c.a.map(chip).join("")}</span><span class="vs">vs</span><span class="team">${c.b.map(chip).join("")}</span></div>`).join("")}
         ${g.rest&&g.rest.length?`<div class="rest">Istirahat: ${g.rest.map(nm).map(esc).join(", ")}</div>`:""}</div>
       <button class="tick" data-done="${i}" aria-pressed="${!!g.done}" aria-label="Tandai game ${i+1} selesai">${ic("check")}</button>
-    </div>`).join("")}</div>
+    </div></div>`).join("")}</div>
+    ${HAS_TOUCH?`<p class="note">Tips: geser kartu game ke kanan untuk menandai selesai, geser kiri/kanan untuk pindah tab.</p>`:""}
     <div class="card"><div class="card-title"><b>${ic("chart")}Pembagian</b><span class="meta">dari ${S.games.length} game</span></div>
       <div class="tally">${S.players.map(p=>`<div style="--c:${COLORS[p.c%COLORS.length]}"><b>${esc(p.name)}</b><small>main ${t[p.id].main}× · istirahat ${t[p.id].rehat}×</small></div>`).join("")}</div>
     </div>${renderMatrix()}`;
@@ -495,7 +528,7 @@ function renderPatungan(){
   </div>
   <div class="total"><div><span>Lapangan</span><strong>${rp(r.court)}</strong></div><div><span>Kok</span><strong>${rp(r.kok)}</strong></div><div><span>Total</span><strong>${rp(r.total)}</strong></div></div>
   <div class="card"><div class="card-title"><b>${ic("receipt")}Per orang</b><span class="meta">${paidN}/${r.rows.length} lunas</span></div>
-    ${r.rows.length?`<ul class="people">${r.rows.map(x=>`<li class="${B.paid[x.id]?"paid":""}"><input type="checkbox" class="check" id="pay-${x.id}" data-paid="${x.id}" ${B.paid[x.id]?"checked":""}><label for="pay-${x.id}" class="grow who"><span class="n" style="--c:${colorOf(x.id)}">${esc(nm(x.id))}</span> <span class="meta">${x.main}× main</span></label><span class="money">${rp(x.amt)}</span></li>`).join("")}</ul>`:`<p class="note">Tambahkan pemain di tab Tabel dulu.</p>`}
+    ${r.rows.length?`<ul class="people">${r.rows.map(x=>`<li class="${B.paid[x.id]?"paid":""}"><input type="checkbox" class="check"${IS_IOS?" switch":""} id="pay-${x.id}" data-paid="${x.id}" ${B.paid[x.id]?"checked":""}><label for="pay-${x.id}" class="grow who"><span class="n" style="--c:${colorOf(x.id)}">${esc(nm(x.id))}</span> <span class="meta">${x.main}× main</span></label><span class="money">${rp(x.amt)}</span></li>`).join("")}</ul>`:`<p class="note">Tambahkan pemain di tab Tabel dulu.</p>`}
     ${r.collected>r.total?`<p class="note">Pembulatan menyisakan ${rp(r.collected-r.total)}.</p>`:""}
   </div>`;
   if(r.rows.length){
@@ -546,7 +579,7 @@ function renderKhusus(){
   <div class="card"><div class="card-title"><b>${ic("timer")}Jam main per orang</b><span class="meta">${paidN}/${r.rows.length} lunas</span></div>
     <p class="note">Ubah jam datang/pulang orang yang tidak main full. Yang lain biarkan saja.</p>
     ${r.rows.length?`<ul class="people sp">${r.rows.map(x=>`<li class="${B.paidK[x.id]?"paid":""}${x.part?" part":""}">
-      <div class="top"><input type="checkbox" class="check" id="payk-${x.id}" data-paidk="${x.id}" ${B.paidK[x.id]?"checked":""}><label for="payk-${x.id}" class="grow who"><span class="n" style="--c:${colorOf(x.id)}">${esc(nm(x.id))}</span> ${x.part?`<span class="tagp">${durText(x.min)}</span>`:`<span class="meta">full</span>`}</label><span class="money">${rp(x.amt)}</span></div>
+      <div class="top"><input type="checkbox" class="check"${IS_IOS?" switch":""} id="payk-${x.id}" data-paidk="${x.id}" ${B.paidK[x.id]?"checked":""}><label for="payk-${x.id}" class="grow who"><span class="n" style="--c:${colorOf(x.id)}">${esc(nm(x.id))}</span> ${x.part?`<span class="tagp">${durText(x.min)}</span>`:`<span class="meta">full</span>`}</label><span class="money">${rp(x.amt)}</span></div>
       <div class="times"><label class="f">Datang<input type="time" id="kf-${x.id}" data-span="from" data-sid="${x.id}" value="${hm(r.st+x.f)}"></label><label class="f">Pulang<input type="time" id="kt-${x.id}" data-span="to" data-sid="${x.id}" value="${hm(r.st+x.to)}"></label>${x.part?`<button data-full="${x.id}" aria-label="Jadikan full">Full</button>`:`<span></span>`}</div>
       <div class="brk">Lapangan ${rp(x.court)} + kok ${rp(x.kok)}</div>
     </li>`).join("")}</ul>`:`<p class="note">Tambahkan pemain di tab Tabel dulu.</p>`}
@@ -662,13 +695,8 @@ function touch(){S.example=false}
 /* ---------- interaksi ---------- */
 document.addEventListener("click",e=>{
   const t=e.target.closest("button");if(!t)return;
-  if(t.dataset.tab){
-    tab=t.dataset.tab;document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b===t));
-    const TABS=["jadwal","patungan","khusus"];
-    document.getElementById("tabs").style.setProperty("--i",TABS.indexOf(tab));
-    TABS.forEach(n=>{const s=document.getElementById("tab-"+n);s.hidden=n!==tab;if(n===tab){s.classList.remove("enter");void s.offsetWidth;s.classList.add("enter");setTimeout(()=>s.classList.remove("enter"),600)}});
-    return;
-  }
+  if(t.dataset.tab){if(t.dataset.tab!==tab){setTab(t.dataset.tab);haptic()}return}
+  if(t.id==="iosTipClose"){document.getElementById("iosTip").hidden=true;try{localStorage.setItem(TIP_KEY,"1")}catch(err){}return}
   if(t.id==="themeBtn"){const nx=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";try{localStorage.setItem(THEME_KEY,nx)}catch(err){}applyTheme(nx);return}
   if(t.id==="imgMake"){
     t.disabled=true;t.textContent="Membuat gambar…";
@@ -686,11 +714,11 @@ document.addEventListener("click",e=>{
     try{navigator.clipboard.writeText(ta.value).then(()=>{msg.textContent="Tersalin ✓";showToast("Tersalin, tinggal tempel di WhatsApp")},fb)}catch(err){fb()}
     return;
   }
-  if(t.dataset.del){S.players=S.players.filter(p=>p.id!==t.dataset.del);if(S.players.length<8)S.courts=1;touch();regenerate()}
+  if(t.dataset.del){S.players=S.players.filter(p=>p.id!==t.dataset.del);if(S.players.length<8)S.courts=1;touch();regenerate();haptic()}
   else if(t.dataset.courts){if(S.courts===+t.dataset.courts)return;S.courts=+t.dataset.courts;touch();regenerate()}
-  else if(t.id==="gen"){touch();regenerate();showToast("Susunan baru dibuat")}
-  else if(t.dataset.done){const g=S.games[+t.dataset.done];g.done=!g.done;touch()}
-  else if(t.dataset.kok){S.bill.kok=Math.max(0,S.bill.kok+ +t.dataset.kok);touch()}
+  else if(t.id==="gen"){touch();regenerate();haptic();showToast("Susunan baru dibuat")}
+  else if(t.dataset.done){const g=S.games[+t.dataset.done];g.done=!g.done;touch();haptic()}
+  else if(t.dataset.kok){const nk=Math.max(0,S.bill.kok+ +t.dataset.kok);if(nk!==S.bill.kok)haptic();S.bill.kok=nk;touch()}
   else if(t.dataset.mode){S.bill.mode=t.dataset.mode;touch()}
   else if(t.dataset.round){S.bill.round=+t.dataset.round;touch()}
   else if(t.id==="hoursAuto"){S.bill.hours=null;touch()}
@@ -710,8 +738,9 @@ document.addEventListener("submit",e=>{
 });
 document.addEventListener("change",e=>{
   const s=e.target;
-  if(s.dataset.paid){if(s.checked)S.bill.paid[s.dataset.paid]=true;else delete S.bill.paid[s.dataset.paid];touch();save();render()}
-  if(s.dataset.paidk){if(s.checked)S.bill.paidK[s.dataset.paidk]=true;else delete S.bill.paidK[s.dataset.paidk];touch();save();render()}
+  // di iOS, toggle switch bawaan sudah bergetar sendiri
+  if(s.dataset.paid){if(s.checked)S.bill.paid[s.dataset.paid]=true;else delete S.bill.paid[s.dataset.paid];if(!IS_IOS)haptic();touch();save();render()}
+  if(s.dataset.paidk){if(s.checked)S.bill.paidK[s.dataset.paidk]=true;else delete S.bill.paidK[s.dataset.paidk];if(!IS_IOS)haptic();touch();save();render()}
   if(s.dataset.span){
     if(!s.value)return;
     const id=s.dataset.sid,r=billKhusus(),x=r.rows.find(y=>y.id===id);if(!x)return;
@@ -733,6 +762,74 @@ document.addEventListener("input",e=>{
   if(s.dataset.b){const v=parseFloat(s.value);S.bill[s.dataset.b]=isNaN(v)||v<0?0:v;touch();save()}
 });
 
+/* ---------- pindah tab ---------- */
+function setTab(name){
+  tab=name;
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===name));
+  document.getElementById("tabs").style.setProperty("--i",TABS.indexOf(name));
+  TABS.forEach(n=>{const s=document.getElementById("tab-"+n);s.hidden=n!==tab;if(n===tab){s.classList.remove("enter");void s.offsetWidth;s.classList.add("enter");setTimeout(()=>s.classList.remove("enter"),600)}});
+  window.scrollTo(0,0);
+}
+
+/* ---------- getar halus ----------
+   Android: navigator.vibrate. iOS 18+: Safari tidak punya vibrate, tapi menggeser
+   <input type="checkbox" switch> memicu haptic bawaan. Kita klik label switch tersembunyi. */
+let hapEl=null;
+function haptic(){
+  try{
+    if(navigator.vibrate){navigator.vibrate(12);return}
+    if(!IS_IOS)return;
+    if(!hapEl){
+      hapEl=document.createElement("label");hapEl.setAttribute("aria-hidden","true");
+      hapEl.style.cssText="position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none";
+      const i=document.createElement("input");i.type="checkbox";i.setAttribute("switch","");i.tabIndex=-1;
+      hapEl.appendChild(i);document.body.appendChild(hapEl);
+    }
+    hapEl.click();
+  }catch(e){}
+}
+
+/* ---------- gestur geser ----------
+   Geser kartu game ke kanan = tandai selesai (atau batalkan). Geser kiri/kanan di tempat
+   lain = pindah tab. Sentuhan dari tepi layar diabaikan supaya gestur "kembali" iOS tetap jalan. */
+const SWIPE_DONE=90,SWIPE_TAB=70;
+let sw=null;
+function swipeReset(s){if(s&&s.game){s.game.style.transition="";s.game.style.transform="";s.game.parentElement.classList.remove("swiping","armed")}}
+document.addEventListener("touchstart",e=>{
+  if(e.touches.length!==1){swipeReset(sw);sw=null;return}
+  const p=e.touches[0],tg=e.target;
+  if(tg.closest("input,textarea,label.f,.mx-wrap,.tabbar,.seg,.imgprev")){sw=null;return}
+  sw={x:p.clientX,y:p.clientY,dx:0,dir:null,armed:false,game:tg.closest(".game"),edge:p.clientX<24||p.clientX>window.innerWidth-24};
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  if(!sw)return;
+  const p=e.touches[0],dx=p.clientX-sw.x,dy=p.clientY-sw.y;
+  if(!sw.dir){if(Math.abs(dx)<10&&Math.abs(dy)<10)return;sw.dir=Math.abs(dx)>Math.abs(dy)*1.3?"h":"v"}
+  if(sw.dir!=="h")return;
+  sw.dx=dx;
+  if(sw.game){
+    const d=Math.max(0,Math.min(dx,140)),w=sw.game.parentElement;
+    sw.game.style.transition="none";sw.game.style.transform=`translateX(${d}px)`;
+    w.classList.toggle("swiping",d>0);
+    const arm=d>=SWIPE_DONE;if(arm!==sw.armed){sw.armed=arm;w.classList.toggle("armed",arm)}
+  }
+},{passive:true});
+document.addEventListener("touchend",()=>{
+  if(!sw)return;const s=sw;sw=null;swipeReset(s);
+  if(s.dir!=="h")return;
+  if(s.game&&s.dx>=SWIPE_DONE){
+    const i=+s.game.dataset.i,g=S.games[i];if(!g)return;
+    g.done=!g.done;touch();haptic();save();render();
+    showToast(g.done?`Game ${i+1} selesai`:`Game ${i+1} batal selesai`);return;
+  }
+  if(s.game&&s.dx>0)return;
+  if(!s.edge&&Math.abs(s.dx)>=SWIPE_TAB){
+    const i=TABS.indexOf(tab)+(s.dx<0?1:-1);
+    if(i>=0&&i<TABS.length){setTab(TABS[i]);haptic()}
+  }
+},{passive:true});
+document.addEventListener("touchcancel",()=>{swipeReset(sw);sw=null},{passive:true});
+
 /* ---------- tema ---------- */
 function applyTheme(t){
   document.documentElement.setAttribute("data-theme",t);
@@ -744,6 +841,7 @@ function applyTheme(t){
 (function(){let t=null;try{t=localStorage.getItem(THEME_KEY)}catch(e){}applyTheme(t==="light"?"light":"dark")})();
 
 if(!S)S=sample();
+(function(){let seen=null;try{seen=localStorage.getItem(TIP_KEY)}catch(e){}if(IS_IOS&&!STANDALONE&&!seen)document.getElementById("iosTip").hidden=false})();
 render();
 document.getElementById("tab-jadwal").classList.add("enter");
 startSync();

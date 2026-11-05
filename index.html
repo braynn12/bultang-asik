@@ -25,6 +25,8 @@
   --accent:#F97316; --accent-edge:#EA580C; --accent-ink:#0F172A;
   --pink:#F97316; --ok:#22C55E; --ok-ink:#0F172A; --danger:#EF4444;
   --soft-blue:#1C2740; --soft-pink:#2B1A22; --soft-mint:#13291F; --soft-sun:#2A1E14;
+  /* lantai lapangan di Beranda: hijau karpet lapangan sungguhan, garis kapur putih */
+  --turf:#17402B; --chalk:rgba(255,255,255,.62);
   --display:"Barlow Condensed","Barlow",system-ui,sans-serif;
   --body:"Barlow",system-ui,sans-serif;
   --ease:cubic-bezier(.22,.8,.24,1);
@@ -36,7 +38,8 @@
   --court:#C2410C; --court-ink:#FFFFFF;
   --accent:#F97316; --accent-edge:#EA580C; --accent-ink:#0F172A;
   --pink:#C2410C; --ok:#15803D; --ok-ink:#FFFFFF; --danger:#DC2626;
-  --soft-blue:#EEF2F8; --soft-pink:#FDECEC; --soft-mint:#E8F6EC; --soft-sun:#FFEDD5; color-scheme:light}
+  --soft-blue:#EEF2F8; --soft-pink:#FDECEC; --soft-mint:#E8F6EC; --soft-sun:#FFEDD5;
+  --turf:#267A43; --chalk:rgba(255,255,255,.8); color-scheme:light}
 *{box-sizing:border-box}
 :root{padding-top:env(safe-area-inset-top,0px)}
 [hidden]{display:none!important}
@@ -46,7 +49,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-
 header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 h1{font-family:var(--display);font-weight:700;font-size:clamp(36px,10vw,46px);line-height:1;margin:0;letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 h1 span{color:var(--pink)}
-h1 .shuttle{width:.8em;height:.8em;color:var(--accent);stroke-width:2.2;animation:shuttle 2.6s ease-in-out infinite;transform-origin:50% 80%}
+h1 .shuttle{width:.8em;height:.8em;color:var(--accent);stroke-width:2.2;animation:shuttle 2.6s ease-in-out 2;transform-origin:50% 80%}
 @keyframes shuttle{0%,100%{transform:translateY(0) rotate(-12deg)}50%{transform:translateY(-6px) rotate(10deg)}}
 .sub{color:var(--muted);font-size:14px;font-weight:600;margin:6px 0 8px}
 h2{font-family:var(--display);font-weight:700;font-size:26px;margin:0;text-transform:uppercase;letter-spacing:.5px}
@@ -85,7 +88,7 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:70
 /* navigasi bawah */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px))}
 .tabs{display:flex;max-width:520px;margin:0 auto;position:relative;isolation:isolate}
-.tabs .pill{position:absolute;top:0;bottom:0;left:0;width:calc(100% / 3);border-radius:16px;background:color-mix(in srgb,var(--accent) 16%,transparent);transform:translateX(calc(var(--i,0) * 100%));transition:transform .38s var(--ease);z-index:-1}
+.tabs .pill{position:absolute;top:0;bottom:0;left:0;width:calc(100% / var(--n,4));border-radius:16px;background:color-mix(in srgb,var(--accent) 16%,transparent);transform:translateX(calc(var(--i,0) * 100%));transition:transform .38s var(--ease);z-index:-1}
 .tabs button{flex:1;min-width:0;min-height:56px;border:0;background:transparent;flex-direction:column;gap:2px;font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.3px;line-height:1.1;padding:6px 4px;color:var(--muted)}
 .tabs button .ic{width:24px;height:24px}
 .tabs button[aria-selected="true"]{color:var(--court)}
@@ -204,6 +207,35 @@ html{-webkit-text-size-adjust:100%}
 .imp .card-title b .ic{color:var(--ok)}
 .wake{justify-content:flex-start;font-size:14px;font-weight:600;color:var(--muted);border-style:dashed;text-align:left}
 .wake[aria-pressed="true"]{color:var(--court);border-style:solid;border-color:color-mix(in srgb,var(--court) 45%,var(--line));background:color-mix(in srgb,var(--court) 8%,var(--surface))}
+/* beranda: papan lapangan. Game yang sedang jalan digambar di lapangan dari atas,
+   tiap pemain berdiri di kotak servisnya. Ini satu-satunya titik fokus layar. */
+.board{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.board-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.lab{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+.gno{font-family:var(--display);font-weight:700;font-size:48px;line-height:.9;text-transform:uppercase}
+.gno span{color:var(--court)}
+.gno small{font-size:24px;color:var(--muted);font-weight:600}
+.at{font-family:var(--display);font-weight:600;font-size:24px;line-height:1;font-variant-numeric:tabular-nums;color:var(--muted)}
+.court{position:relative;aspect-ratio:134/61;border-radius:8px;background:var(--turf);overflow:hidden}
+.court svg{position:absolute;inset:0;width:100%;height:100%}
+.court svg *{fill:none;stroke:var(--chalk);stroke-width:2}
+.court svg .netl{stroke:#fff;stroke-width:4;stroke-dasharray:3 3}
+.court .side{position:absolute;top:0;bottom:0;width:50%;display:grid;grid-template-rows:1fr 1fr;align-items:center;justify-items:center;padding:6px}
+.court .side.a{left:0}.court .side.b{right:0}
+.court .n{background:var(--surface);border:2px solid var(--c);font-size:16px;padding:3px 12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.court-lab{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:-6px}
+.board.enter .court .n{animation:rise .35s var(--ease) both}
+.board.enter .court .side.b .n{animation-delay:60ms}
+.big{min-height:56px;font-size:18px;width:100%}
+.ghost{border-style:dashed;color:var(--muted);font-size:14px;align-self:center}
+.next .match .n{font-size:15px}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+button.tile{align-items:flex-start;justify-content:flex-start;text-align:left;border-width:1px}
+button.tile:hover{border-color:var(--court)}
+.tile strong{font-family:var(--display);font-weight:700;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
+.tile .stepper b{font-size:30px}
 @media (max-width:420px){.grid3{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3 .last{grid-column:1/-1}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
@@ -260,14 +292,16 @@ html{-webkit-text-size-adjust:100%}
     <span>Ini contoh. Ganti nama pemain dan jamnya, tabelnya langsung menyesuaikan.</span>
   </div>
 
-  <section id="tab-jadwal" style="display:flex;flex-direction:column;gap:16px"></section>
+  <section id="tab-beranda" style="display:flex;flex-direction:column;gap:16px"></section>
+  <section id="tab-jadwal" style="display:flex;flex-direction:column;gap:16px" hidden></section>
   <section id="tab-patungan" style="display:flex;flex-direction:column;gap:16px" hidden></section>
   <section id="tab-khusus" style="display:flex;flex-direction:column;gap:16px" hidden></section>
 </div>
 <nav class="tabbar" aria-label="Menu">
-  <div class="tabs" role="tablist" id="tabs" style="--i:0">
+  <div class="tabs" role="tablist" id="tabs" style="--i:0;--n:4">
     <span class="pill" aria-hidden="true"></span>
-    <button role="tab" data-tab="jadwal" aria-selected="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-list"/></svg>Tabel</button>
+    <button role="tab" data-tab="beranda" aria-selected="true"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-court"/></svg>Lapangan</button>
+    <button role="tab" data-tab="jadwal" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-list"/></svg>Tabel</button>
     <button role="tab" data-tab="patungan" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wallet"/></svg>Patungan</button>
     <button role="tab" data-tab="khusus" aria-selected="false"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-timer"/></svg>Patungan khusus</button>
   </div>
@@ -300,7 +334,8 @@ const CAN_WAKE="wakeLock" in navigator, WAKE_KEY="bultang-wake";
 const HAS_TOUCH="ontouchstart" in window||navigator.maxTouchPoints>0;
 document.documentElement.classList.toggle("ios",IS_IOS);
 document.documentElement.classList.toggle("standalone",STANDALONE);
-const COLORS_LIGHT=["#2f80ff","#ff5c8a","#12a874","#c98a00","#8b5cf6","#c026d3","#0ea5b7","#e5484d"];
+// warna nama di tema terang: semua ≥4,5:1 di atas chip berwarna (16% campur putih), lolos WCAG AA
+const COLORS_LIGHT=["#1d4ed8","#9d174d","#065f46","#854d0e","#6d28d9","#a21caf","#155e75","#b91c1c"];
 const COLORS_DARK=["#6aa8ff","#ff7aa2","#b7f34a","#ffcf5a","#b197fc","#e879f9","#4fd6e8","#ff6b6b"];
 let COLORS=COLORS_DARK;
 const uid=()=>Math.random().toString(36).slice(2,9);
@@ -501,7 +536,7 @@ async function syncWake(){
   try{
     do{
       wakeAgain=false;
-      const want=wakeOn&&tab==="jadwal"&&document.visibilityState==="visible"&&S.games.length>0;
+      const want=wakeOn&&(tab==="jadwal"||tab==="beranda")&&document.visibilityState==="visible"&&S.games.length>0;
       if(want&&!wakeSentinel){
         const s=await navigator.wakeLock.request("screen");wakeSentinel=s;
         s.addEventListener("release",()=>{if(wakeSentinel===s)wakeSentinel=null});
@@ -513,8 +548,8 @@ async function syncWake(){
 document.addEventListener("visibilitychange",syncWake);
 
 /* ---------- tampilan ---------- */
-let tab="jadwal",enterGames=false,toastT=null;
-const TABS=["jadwal","patungan","khusus"];
+let tab="beranda",enterGames=false,boardIn=false,toastT=null;
+const TABS=["beranda","jadwal","patungan","khusus"];
 const nm=id=>S.names[id]||"?";
 const colorOf=id=>{const p=S.players.find(x=>x.id===id);return COLORS[(p?p.c:Object.keys(S.names).indexOf(id))%COLORS.length]};
 const chip=id=>`<span class="n" style="--c:${colorOf(id)}">${esc(nm(id))}</span>`;
@@ -584,6 +619,67 @@ function renderJadwal(){
       <div class="row"><button class="primary" id="imgMake">${ic("image")}Kirim sebagai gambar</button>${CAN_SHARE?`<button data-share="tblText">${ic(IS_IOS?"ios-share":"share")}Bagikan teks</button>`:`<button data-copy="tblText">${ic("copy")}Salin teks</button>`}<span class="meta copymsg"></span></div>${renderImageCard()}`;
   }
   return h;
+}
+/* ---------- beranda: papan lapangan ---------- */
+// garis lapangan ganda dari atas (13,4 m × 6,1 m, skala 1:10): garis servis pendek 1,98 m dari net,
+// garis servis panjang ganda 0,76 m dari belakang, garis samping tunggal 0,46 m dari tepi
+const COURT_SVG=`<svg viewBox="0 0 134 61" preserveAspectRatio="none" aria-hidden="true"><rect x="1" y="1" width="132" height="59" vector-effect="non-scaling-stroke"/><path d="M1 5.6H133M1 55.4H133M47.2 1V60M86.8 1V60M8.6 1V60M125.4 1V60M1 30.5H47.2M86.8 30.5H133" vector-effect="non-scaling-stroke"/><path class="netl" d="M67 0V61" vector-effect="non-scaling-stroke"/></svg>`;
+function courtView(c,label){
+  const names=c?`<div class="side a" aria-hidden="true">${c.a.map(chip).join("")}</div><div class="side b" aria-hidden="true">${c.b.map(chip).join("")}</div>`:"";
+  const sr=c?`<span class="sr">${esc(c.a.map(nm).join(" dan "))} melawan ${esc(c.b.map(nm).join(" dan "))}</span>`:"";
+  return `${label?`<div class="court-lab">${label}</div>`:""}<div class="court">${COURT_SVG}${names}${sr}</div>`;
+}
+function renderBeranda(){
+  const n=S.players.length,games=S.games,total=games.length;
+  const nowIdx=games.findIndex(g=>!g.done),doneN=games.filter(g=>g.done).length;
+  let lastDone=-1;games.forEach((g,i)=>{if(g.done)lastDone=i});
+  const day=new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
+  const undo=lastDone>=0?`<button class="ghost" data-done="${lastDone}">${ic("x")}Urungkan game ${lastDone+1}</button>`:"";
+  let board;
+  if(n<4){
+    board=`<div class="board"><div class="board-head"><div><span class="lab">Lapangan masih kosong</span><b class="gno">${n} <small>dari 4 pemain</small></b></div></div>
+      ${courtView(null)}
+      <p class="note">Main ganda butuh minimal 4 orang. Tambah ${4-n} lagi, lapangan langsung terisi.</p>
+      <button class="primary big" data-tab="jadwal">${ic("users")}Isi pemain</button></div>`;
+  }else if(!total){
+    board=`<div class="board"><div class="board-head"><div><span class="lab">Belum ada game</span><b class="gno">0 <small>game</small></b></div></div>
+      ${courtView(null)}
+      <p class="note">Waktu main ${durText(totalMin(S))} belum cukup untuk satu game ${S.minutes} menit.</p>
+      <button class="primary big" data-tab="jadwal">${ic("clock")}Atur waktu main</button></div>`;
+  }else if(nowIdx<0){
+    board=`<div class="board"><div class="board-head"><div><span class="lab">Sesi beres</span><b class="gno"><span>${total}</span> <small>game selesai</small></b></div><span class="at">${fmt(toMin(S.end))}</span></div>
+      ${courtView(null)}
+      <p class="note">Semua game sudah dicentang. Tinggal tagih patungan.</p>
+      <button class="primary big" data-tab="patungan">${ic("wallet")}Buka patungan</button>${undo}</div>`;
+  }else{
+    const g=games[nowIdx],two=g.courts.length>1;
+    board=`<div class="board${boardIn?" enter":""}"><div class="board-head"><div><span class="lab">Sekarang di lapangan</span><b class="gno">Game <span>${nowIdx+1}</span><small>/${total}</small></b></div><span class="at">${gameTime(nowIdx)}</span></div>
+      ${g.courts.map((c,k)=>courtView(c,two?`Lapangan ${k+1}`:"")).join("")}
+      ${g.rest&&g.rest.length?`<div class="rest">Istirahat: ${g.rest.map(nm).map(esc).join(", ")}</div>`:""}
+      <button class="primary big" data-done="${nowIdx}">${ic("check")}Game ${nowIdx+1} selesai</button>${undo}</div>`;
+  }
+  let next="";
+  const ni=nowIdx<0?-1:games.findIndex((g,i)=>i>nowIdx&&!g.done);
+  if(ni>=0){
+    const g=games[ni],nowOn=new Set(games[nowIdx].courts.flatMap(c=>[...c.a,...c.b]));
+    const incoming=g.courts.flatMap(c=>[...c.a,...c.b]).filter(i=>!nowOn.has(i));
+    next=`<div class="card next"><div class="card-title"><b>${ic("clock")}Berikutnya</b><span class="meta">Game ${ni+1} · ${gameTime(ni)}</span></div>
+      ${g.courts.map((c,k)=>`${g.courts.length>1?`<span class="lap">Lapangan ${k+1}</span>`:""}<div class="match"><span class="team">${c.a.map(chip).join("")}</span><span class="vs">vs</span><span class="team">${c.b.map(chip).join("")}</span></div>`).join("")}
+      ${incoming.length?`<div class="summary">Siap-siap masuk: ${incoming.map(nm).map(esc).join(", ")}</div>`:`<p class="note">Pemainnya sama dengan game sekarang, tidak ada yang ganti.</p>`}
+      <button data-tab="jadwal">${ic("list")}Lihat semua ${total} game</button></div>`;
+  }else if(nowIdx>=0){
+    next=`<p class="note">Ini game terakhir malam ini.</p>`;
+  }
+  let strip="";
+  if(n){
+    const r=billCalc(),paidN=r.rows.filter(x=>S.bill.paid[x.id]).length;
+    strip=`<div class="strip">
+      <div class="tile"><span class="lab">Kok terpakai</span><div class="stepper"><button data-kok="-1" aria-label="Kurangi kok">${ic("minus")}</button><b>${S.bill.kok}</b><button data-kok="1" aria-label="Tambah kok">${ic("plus")}</button></div></div>
+      <button class="tile" data-tab="patungan"><span class="lab">Patungan malam ini</span><strong>${rp(r.total)}</strong><span class="meta">${paidN}/${r.rows.length} sudah lunas · lihat tagihan</span></button>
+    </div>`;
+  }
+  return `<div class="row between"><span class="meta">${esc(day)} · ${fmt(toMin(S.start))}–${fmt(toMin(S.end))}${S.courts>1?" · 2 lapangan":""}</span>${total?`<span class="meta">${doneN}/${total} selesai</span>`:""}</div>
+    ${board}${next}${strip}`;
 }
 function billCalc(){
   const B=S.bill,hours=B.hours!=null?B.hours:totalMin(S)/60;
@@ -770,12 +866,13 @@ function render(){
   const ae=document.activeElement,aid=ae&&ae.id&&ae.matches("input")?ae.id:null,aval=aid?ae.value:null;
   const keepName=(document.getElementById("newName")||{}).value||"";
   document.getElementById("exampleBanner").hidden=!S.example;
+  document.getElementById("tab-beranda").innerHTML=renderBeranda();
   document.getElementById("tab-jadwal").innerHTML=renderJadwal();
   document.getElementById("tab-patungan").innerHTML=renderPatungan();
   document.getElementById("tab-khusus").innerHTML=renderKhusus();
   const nn=document.getElementById("newName");if(nn&&keepName)nn.value=keepName;
   if(aid){const el=document.getElementById(aid);if(el){el.value=aval;el.focus({preventScroll:true})}}
-  enterGames=false;
+  enterGames=false;boardIn=false;
   syncWake();
 }
 function regenerate(){
@@ -808,7 +905,7 @@ document.addEventListener("click",e=>{
   if(t.id==="impCancel"){pendingImport=null;render();return}
   if(t.id==="wakeBtn"){
     wakeOn=!wakeOn;try{localStorage.setItem(WAKE_KEY,wakeOn?"1":"0")}catch(err){}
-    haptic();render();showToast(wakeOn?"Layar tetap menyala di tab Tabel":"Layar boleh mati seperti biasa");return;
+    haptic();render();showToast(wakeOn?"Layar tetap menyala di tab Lapangan dan Tabel":"Layar boleh mati seperti biasa");return;
   }
   if(t.id==="iosTipClose"){document.getElementById("iosTip").hidden=true;try{localStorage.setItem(TIP_KEY,"1")}catch(err){}return}
   if(t.id==="themeBtn"){const nx=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";try{localStorage.setItem(THEME_KEY,nx)}catch(err){}applyTheme(nx);return}
@@ -839,7 +936,8 @@ document.addEventListener("click",e=>{
   if(t.dataset.del){S.players=S.players.filter(p=>p.id!==t.dataset.del);if(S.players.length<8)S.courts=1;touch();regenerate();haptic()}
   else if(t.dataset.courts){if(S.courts===+t.dataset.courts)return;S.courts=+t.dataset.courts;touch();regenerate()}
   else if(t.id==="gen"){touch();regenerate();haptic();showToast("Susunan baru dibuat")}
-  else if(t.dataset.done){const g=S.games[+t.dataset.done];g.done=!g.done;touch();haptic()}
+  else if(t.dataset.done){const i=+t.dataset.done,g=S.games[i];g.done=!g.done;touch();haptic();
+    if(tab==="beranda"){boardIn=true;showToast(g.done?`Game ${i+1} selesai`:`Game ${i+1} dibuka lagi`)}}
   else if(t.dataset.kok){const nk=Math.max(0,S.bill.kok+ +t.dataset.kok);if(nk!==S.bill.kok)haptic();S.bill.kok=nk;touch()}
   else if(t.dataset.mode){S.bill.mode=t.dataset.mode;touch()}
   else if(t.dataset.round){S.bill.round=+t.dataset.round;touch()}
@@ -974,9 +1072,9 @@ if(!S)S=sample();
   if(q.toString())try{history.replaceState(null,"",location.pathname)}catch(e){}
   const t=q.get("tab")||(pendingKok?"patungan":null);
   render();
-  if(t&&TABS.includes(t)&&t!=="jadwal")setTab(t);
+  if(t&&TABS.includes(t)&&t!==tab)setTab(t);
 })();
-document.getElementById("tab-jadwal").classList.add("enter");
+document.getElementById("tab-"+tab).classList.add("enter");
 startSync();
 </script>
 </body>

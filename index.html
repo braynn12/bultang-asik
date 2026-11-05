@@ -199,6 +199,11 @@ details.txt summary{cursor:pointer;color:var(--muted);font-size:13px;font-weight
 .ios-tip img{border-radius:10px;flex:none}
 .ios-tip .ic{color:var(--court)}
 html{-webkit-text-size-adjust:100%}
+/* Android: impor WhatsApp, layar menyala */
+.imp{border:2px solid color-mix(in srgb,var(--ok) 55%,var(--line))}
+.imp .card-title b .ic{color:var(--ok)}
+.wake{justify-content:flex-start;font-size:14px;font-weight:600;color:var(--muted);border-style:dashed;text-align:left}
+.wake[aria-pressed="true"]{color:var(--court);border-style:solid;border-color:color-mix(in srgb,var(--court) 45%,var(--line));background:color-mix(in srgb,var(--court) 8%,var(--surface))}
 @media (max-width:420px){.grid3{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3 .last{grid-column:1/-1}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
@@ -223,6 +228,9 @@ html{-webkit-text-size-adjust:100%}
   <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
   <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
   <symbol id="i-ios-share" viewBox="0 0 24 24"><path d="M8 9H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-2M16 6l-4-4-4 4M12 2v13"/></symbol>
+  <symbol id="i-contact" viewBox="0 0 24 24"><path d="M16 2v2M8 2v2M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><circle cx="12" cy="11" r="3"/><rect x="3" y="4" width="18" height="18" rx="2"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7M17 12H7"/></symbol>
+  <symbol id="i-screen" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
@@ -286,6 +294,9 @@ const CAN_SHARE=typeof navigator.share==="function";
 const billBtns=id=>CAN_SHARE
   ?`<button class="primary" data-share="${id}">${ic(IS_IOS?"ios-share":"share")}Bagikan tagihan</button><button data-copy="${id}">${ic("copy")}Salin</button>`
   :`<button class="primary" data-copy="${id}">${ic("copy")}Salin tagihan ke WhatsApp</button>`;
+const IS_ANDROID=/Android/i.test(navigator.userAgent);
+const CAN_CONTACTS="contacts" in navigator&&"ContactsManager" in window;
+const CAN_WAKE="wakeLock" in navigator, WAKE_KEY="bultang-wake";
 const HAS_TOUCH="ontouchstart" in window||navigator.maxTouchPoints>0;
 document.documentElement.classList.toggle("ios",IS_IOS);
 document.documentElement.classList.toggle("standalone",STANDALONE);
@@ -413,8 +424,8 @@ async function push(){
   finally{writing=false}
 }
 function startSync(){
-  if(!window.firebase||typeof FIREBASE_CONFIG==="undefined"||!FIREBASE_CONFIG.projectId||FIREBASE_CONFIG.projectId.startsWith("ISI_")){setSync("local");return}
-  try{firebase.initializeApp(FIREBASE_CONFIG);docRef=firebase.firestore().collection("bultang").doc("v2")}catch(e){setSync("err","Config Firebase salah");return}
+  if(!window.firebase||typeof FIREBASE_CONFIG==="undefined"||!FIREBASE_CONFIG.projectId||FIREBASE_CONFIG.projectId.startsWith("ISI_")){setSync("local");afterFirstSync();return}
+  try{firebase.initializeApp(FIREBASE_CONFIG);docRef=firebase.firestore().collection("bultang").doc("v2")}catch(e){setSync("err","Config Firebase salah");afterFirstSync();return}
   docRef.onSnapshot(snap=>{
     if(snap.exists){
       const d=snap.data();
@@ -422,9 +433,84 @@ function startSync(){
         try{const next=JSON.parse(d.json);if(next&&Array.isArray(next.players)){lastSent=d.json;S=normalize(next);try{localStorage.setItem(KEY,d.json)}catch(e){}render()}}catch(e){}
       }
     }else if(!S.example)save();
-    setSync("live");
-  },err=>{docRef=null;setSync("err",err&&err.code==="permission-denied"?"Akses database ditolak":"Sinkron terputus")});
+    setSync("live");afterFirstSync();
+  },err=>{docRef=null;setSync("err",err&&err.code==="permission-denied"?"Akses database ditolak":"Sinkron terputus");afterFirstSync()});
 }
+/* aksi yang mengubah data (pintasan "Tambah kok") ditunda sampai data grup terbaru masuk,
+   supaya tidak tertimpa snapshot Firebase atau malah menimpa data orang lain */
+let pendingKok=false,firstSyncDone=false;
+function afterFirstSync(){
+  if(firstSyncDone)return;firstSyncDone=true;
+  if(pendingKok){pendingKok=false;S.bill.kok++;touch();save();render();showToast(`Kok ditambah, total ${S.bill.kok} buah`)}
+}
+
+/* ---------- pemain dari kontak & WhatsApp (Android) ---------- */
+function addPlayers(names){
+  let added=0,skipped=0;
+  names.forEach(raw=>{
+    const v=String(raw).trim().slice(0,16);if(!v)return;
+    if(S.players.length>=8||S.players.some(p=>p.name.toLowerCase()===v.toLowerCase())){skipped++;return}
+    const used=new Set(S.players.map(p=>p.c));let c=0;while(used.has(c)&&c<8)c++;
+    const p={id:uid(),name:v,c};S.players.push(p);S.names[p.id]=v;added++;
+  });
+  if(added){touch();regenerate();save()}
+  return {added,skipped};
+}
+// nama depan saja, kecuali ada dua orang dengan nama depan sama
+function shortNames(list){
+  const first=list.map(n=>n.trim().split(/\s+/)[0]);
+  return list.map((n,i)=>first.filter(f=>f.toLowerCase()===first[i].toLowerCase()).length>1?n.trim():first[i]);
+}
+// baca daftar nama dari pesan WhatsApp: "1. Andi", "- Budi", "• Citra", atau "Andi, Budi, Citra"
+function parseNames(text){
+  text=String(text||"").replace(/\p{Extended_Pictographic}|️|‍/gu,"");
+  let lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  if(lines.length===1&&/[,;]/.test(lines[0]))lines=lines[0].split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+  const bullet=/^(\d+\s*[.)\-:]|[-•*·–])\s*/;
+  const listed=lines.filter(l=>bullet.test(l));
+  const src=listed.length>=2?listed.map(l=>l.replace(bullet,"")):lines;
+  const out=[];
+  src.forEach(l=>{
+    const n=l.replace(/@/g,"").replace(/\(.*?\)|\[.*?\]/g,"").replace(/[*_~]/g,"").replace(/\s+/g," ").trim();
+    if(!n||n.length>24||n.split(" ").length>3||/^https?:/i.test(n))return;
+    if(!out.some(o=>o.toLowerCase()===n.toLowerCase()))out.push(n.slice(0,16));
+  });
+  return out.slice(0,8);
+}
+let pendingImport=null;
+function renderImport(){
+  if(!pendingImport)return "";
+  const ns=pendingImport.names;
+  return `<div class="card imp"><div class="card-title"><b>${ic("message")}Dari WhatsApp</b><span class="meta">${ns.length} nama</span></div>
+    ${ns.length?`<div class="players">${ns.map((n,i)=>`<span class="n" style="--c:${COLORS[i%COLORS.length]}">${esc(n)}</span>`).join("")}</div>
+    <div class="row"><button class="primary" id="impReplace">Ganti semua pemain</button><button id="impAdd">Tambahkan</button><button id="impCancel">Batal</button></div>
+    <p class="note">"Ganti semua" memulai sesi baru: tabel dibuat ulang dan status lunas dikosongkan. "Tambahkan" hanya menambah nama yang belum ada (maks. 8 orang).</p>`
+    :`<p class="note">Tidak ada nama yang terbaca dari pesan itu. Bagikan pesan berisi daftar nama, satu nama per baris.</p><div class="row"><button id="impCancel">Tutup</button></div>`}
+  </div>`;
+}
+
+/* ---------- layar tetap menyala ---------- */
+let wakeOn=true,wakeSentinel=null;
+try{wakeOn=localStorage.getItem(WAKE_KEY)!=="0"}catch(e){}
+// dipanggil tiap render; permintaan dijalankan berurutan supaya tidak dobel
+let wakeBusy=false,wakeAgain=false;
+async function syncWake(){
+  if(!CAN_WAKE)return;
+  if(wakeBusy){wakeAgain=true;return}
+  wakeBusy=true;
+  try{
+    do{
+      wakeAgain=false;
+      const want=wakeOn&&tab==="jadwal"&&document.visibilityState==="visible"&&S.games.length>0;
+      if(want&&!wakeSentinel){
+        const s=await navigator.wakeLock.request("screen");wakeSentinel=s;
+        s.addEventListener("release",()=>{if(wakeSentinel===s)wakeSentinel=null});
+      }else if(!want&&wakeSentinel){const s=wakeSentinel;wakeSentinel=null;await s.release()}
+    }while(wakeAgain);
+  }catch(e){wakeSentinel=null}
+  finally{wakeBusy=false}
+}
+document.addEventListener("visibilitychange",syncWake);
 
 /* ---------- tampilan ---------- */
 let tab="jadwal",enterGames=false,toastT=null;
@@ -457,10 +543,11 @@ function renderMatrix(){
 function renderJadwal(){
   const n=S.players.length,ng=nGames(S),slots=S.courts*4,tot=totalMin(S);
   const per=n?(ng*slots/n):0;
-  let h=`<div class="card">
+  let h=renderImport()+`<div class="card">
     <div class="card-title"><b>${ic("users")}Pemain</b><span class="meta">${n} orang · 4–8</span></div>
     <div class="players">${S.players.map(p=>`<span class="pchip" style="--c:${COLORS[p.c%COLORS.length]}">${esc(p.name)}<button data-del="${p.id}" aria-label="Hapus ${esc(p.name)}">${ic("x")}</button></span>`).join("")||`<span class="note">Belum ada pemain.</span>`}</div>
-    ${n<8?`<form id="addForm" class="add"><input id="newName" maxlength="16" placeholder="Nama pemain" aria-label="Nama pemain" autocomplete="off"><button class="primary" type="submit">Tambah</button></form>`:`<p class="note">Sudah 8 orang, jumlah maksimal.</p>`}
+    ${n<8?`<form id="addForm" class="add"><input id="newName" maxlength="16" placeholder="Nama pemain" aria-label="Nama pemain" autocomplete="off"><button class="primary" type="submit">Tambah</button></form>${CAN_CONTACTS?`<button id="fromContacts">${ic("contact")}Pilih dari kontak</button>`:""}`:`<p class="note">Sudah 8 orang, jumlah maksimal.</p>`}
+    ${IS_ANDROID&&n<8?`<p class="note">${STANDALONE?"Tips: di WhatsApp, tekan lama pesan daftar nama → Bagikan → Bultang Asik.":"Pasang aplikasi ini (menu ⋮ → Instal aplikasi) supaya bisa menerima daftar nama langsung dari WhatsApp."}</p>`:""}
   </div>
   <div class="card">
     <div class="card-title"><b>${ic("clock")}Waktu main</b><span class="meta">${durText(tot)}</span></div>
@@ -478,6 +565,7 @@ function renderJadwal(){
     const t=tallies(),nowIdx=S.games.findIndex(g=>!g.done);
     const doneN=S.games.filter(g=>g.done).length;
     h+=`<div class="row between"><h2>Tabel main</h2><span class="meta">${doneN}/${S.games.length} selesai</span></div>
+    ${CAN_WAKE?`<button id="wakeBtn" class="wake" aria-pressed="${wakeOn}">${ic("screen")}${wakeOn?"Layar tetap menyala saat tab ini dibuka":"Layar boleh mati (ketuk untuk tetap menyala)"}</button>`:""}
     <div class="games${enterGames?" enter":""}">${S.games.map((g,i)=>`<div class="gwrap" style="animation-delay:${Math.min(i,12)*30}ms"><div class="gswipe" aria-hidden="true">${ic(g.done?"x":"check")}<span>${g.done?"Batal selesai":"Selesai"}</span></div><div class="game${g.done?" done":""}${i===nowIdx?" now":""}" data-i="${i}">
       <div class="gnum"><b>${i+1}</b><small>${gameTime(i)}</small>${i===nowIdx?`<span class="nowtag">Sekarang</span>`:""}</div>
       <div class="gbody">${g.courts.map((c,k)=>`${g.courts.length>1?`<span class="lap">Lapangan ${k+1}</span>`:""}<div class="match"><span class="team">${c.a.map(chip).join("")}</span><span class="vs">vs</span><span class="team">${c.b.map(chip).join("")}</span></div>`).join("")}
@@ -688,6 +776,7 @@ function render(){
   const nn=document.getElementById("newName");if(nn&&keepName)nn.value=keepName;
   if(aid){const el=document.getElementById(aid);if(el){el.value=aval;el.focus({preventScroll:true})}}
   enterGames=false;
+  syncWake();
 }
 function regenerate(){
   // keep games up to the last one ticked as done, rebuild the rest
@@ -701,6 +790,26 @@ function touch(){S.example=false}
 document.addEventListener("click",e=>{
   const t=e.target.closest("button");if(!t)return;
   if(t.dataset.tab){if(t.dataset.tab!==tab){setTab(t.dataset.tab);haptic()}return}
+  if(t.id==="fromContacts"){
+    navigator.contacts.select(["name"],{multiple:true}).then(res=>{
+      const list=res.map(c=>(c.name||[])[0]).filter(Boolean);if(!list.length)return;
+      const r=addPlayers(shortNames(list));render();haptic();
+      showToast(r.added?`${r.added} pemain ditambahkan${r.skipped?`, ${r.skipped} dilewati (sudah ada/penuh)`:""}`:"Tidak ada pemain baru (sudah ada atau sudah 8 orang)");
+    }).catch(()=>{});
+    return;
+  }
+  if(t.id==="impReplace"||t.id==="impAdd"){
+    const names=pendingImport?pendingImport.names:[];pendingImport=null;
+    if(t.id==="impReplace"){S.players=[];S.games=[];S.courts=1;S.bill.paid={};S.bill.paidK={};S.bill.span={}}
+    const r=addPlayers(names);touch();save();render();haptic();
+    showToast(t.id==="impReplace"?`Sesi baru dengan ${S.players.length} pemain`:`${r.added} pemain ditambahkan${r.skipped?`, ${r.skipped} dilewati`:""}`);
+    return;
+  }
+  if(t.id==="impCancel"){pendingImport=null;render();return}
+  if(t.id==="wakeBtn"){
+    wakeOn=!wakeOn;try{localStorage.setItem(WAKE_KEY,wakeOn?"1":"0")}catch(err){}
+    haptic();render();showToast(wakeOn?"Layar tetap menyala di tab Tabel":"Layar boleh mati seperti biasa");return;
+  }
   if(t.id==="iosTipClose"){document.getElementById("iosTip").hidden=true;try{localStorage.setItem(TIP_KEY,"1")}catch(err){}return}
   if(t.id==="themeBtn"){const nx=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";try{localStorage.setItem(THEME_KEY,nx)}catch(err){}applyTheme(nx);return}
   if(t.id==="imgMake"){
@@ -782,6 +891,7 @@ function setTab(name){
   document.getElementById("tabs").style.setProperty("--i",TABS.indexOf(name));
   TABS.forEach(n=>{const s=document.getElementById("tab-"+n);s.hidden=n!==tab;if(n===tab){s.classList.remove("enter");void s.offsetWidth;s.classList.add("enter");setTimeout(()=>s.classList.remove("enter"),600)}});
   window.scrollTo(0,0);
+  syncWake();
 }
 
 /* ---------- getar halus ----------
@@ -855,7 +965,17 @@ function applyTheme(t){
 
 if(!S)S=sample();
 (function(){let seen=null;try{seen=localStorage.getItem(TIP_KEY)}catch(e){}if(IS_IOS&&!STANDALONE&&!seen)document.getElementById("iosTip").hidden=false})();
-render();
+// buka dari pintasan ikon (?tab=, ?aksi=kok) atau dari share WhatsApp (?text=)
+(function(){
+  const q=new URLSearchParams(location.search);
+  const shared=[q.get("title"),q.get("text")].filter(Boolean).join("\n");
+  if(shared)pendingImport={names:parseNames(shared)};
+  if(q.get("aksi")==="kok")pendingKok=true;
+  if(q.toString())try{history.replaceState(null,"",location.pathname)}catch(e){}
+  const t=q.get("tab")||(pendingKok?"patungan":null);
+  render();
+  if(t&&TABS.includes(t)&&t!=="jadwal")setTab(t);
+})();
 document.getElementById("tab-jadwal").classList.add("enter");
 startSync();
 </script>

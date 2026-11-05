@@ -12,5 +12,15 @@
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
-  ]
+  ],
+  "shortcuts": [
+    { "name": "Tabel main", "short_name": "Tabel", "url": "./?tab=jadwal", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Patungan", "short_name": "Patungan", "url": "./?tab=patungan", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Tambah kok", "short_name": "+1 Kok", "url": "./?aksi=kok", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] }
+  ],
+  "share_target": {
+    "action": "./",
+    "method": "GET",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  }
 }

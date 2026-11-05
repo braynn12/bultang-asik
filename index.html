@@ -13,6 +13,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <title>Bultang Asik</title>
+<script>/* tema dipasang sebelum tampil supaya layar pembuka tidak berkedip gelap di mode terang */try{if(localStorage.getItem("bultang-theme-v2")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700;800&display=swap">
 <style>
@@ -236,11 +237,34 @@ button.tile{align-items:flex-start;justify-content:flex-start;text-align:left;bo
 button.tile:hover{border-color:var(--court)}
 .tile strong{font-family:var(--display);font-weight:700;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
 .tile .stepper b{font-size:30px}
+/* layar pembuka: tampil hanya selama menunggu data grup dari Firebase (maks. 4 detik).
+   Kok bolak-balik melewati net, kepala kok selalu di depan arah terbang. */
+.splash{position:fixed;inset:0;z-index:30;background:var(--bg);display:grid;place-items:center;transition:opacity .35s var(--ease),visibility .35s}
+.splash.out{opacity:0;visibility:hidden}
+.splash-in{display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px;text-align:center}
+.rally{position:relative;width:180px;height:96px}
+.rally .floor{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--line)}
+.rally .net{position:absolute;left:50%;bottom:0;width:3px;height:34px;margin-left:-1.5px;background:var(--muted);border-radius:2px}
+.rally .fly{position:absolute;left:12px;bottom:18px;animation:flyX 2.2s linear infinite}
+.rally .lift{animation:flyY .55s ease-out infinite alternate}
+.rally .sh{width:30px;height:30px;color:var(--accent);stroke-width:2.2;animation:flyR 2.2s linear infinite}
+@keyframes flyX{0%,100%{transform:translateX(0)}50%{transform:translateX(126px)}}
+@keyframes flyY{from{transform:translateY(0)}to{transform:translateY(-58px)}}
+@keyframes flyR{0%{transform:rotate(-135deg)}49.9%{transform:rotate(-45deg)}50%{transform:rotate(135deg)}100%{transform:rotate(45deg)}}
+.splash-word{font-family:var(--display);font-weight:700;font-size:40px;line-height:1;text-transform:uppercase;letter-spacing:.5px}
+.splash-word span{color:var(--pink)}
 @media (max-width:420px){.grid3{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3 .last{grid-column:1/-1}}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
+<div id="splash" class="splash" role="status">
+  <div class="splash-in">
+    <div class="rally" aria-hidden="true"><span class="floor"></span><span class="net"></span><span class="fly"><span class="lift" style="display:block"><svg class="ic sh" viewBox="0 0 24 24"><use href="#i-shuttle"/></svg></span></span></div>
+    <b class="splash-word">Bultang <span>Asik</span></b>
+    <span class="meta">Mengambil tabel grup…</span>
+  </div>
+</div>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-shuttle" viewBox="0 0 24 24"><path d="M5 3h14l-4.5 11h-5z"/><path d="M10 3l1 11M14 3l-1 11"/><circle cx="12" cy="18" r="3.5"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/></symbol>
@@ -474,7 +498,19 @@ function startSync(){
 /* aksi yang mengubah data (pintasan "Tambah kok") ditunda sampai data grup terbaru masuk,
    supaya tidak tertimpa snapshot Firebase atau malah menimpa data orang lain */
 let pendingKok=false,firstSyncDone=false;
+// layar pembuka minimal ±0,6 detik sejak halaman dibuka supaya tidak sekadar berkedip
+let splashDone=false;
+function hideSplash(){
+  if(splashDone)return;splashDone=true;
+  const el=document.getElementById("splash");if(!el)return;
+  setTimeout(()=>{
+    el.classList.add("out");setTimeout(()=>el.remove(),400);
+    const s=document.getElementById("tab-"+tab);s.classList.remove("enter");void s.offsetWidth;s.classList.add("enter");setTimeout(()=>s.classList.remove("enter"),600);
+  },Math.max(0,600-performance.now()));
+}
+setTimeout(hideSplash,4000); // Firebase lambat: jangan tahan pengguna, status sinkron tetap terlihat di header
 function afterFirstSync(){
+  hideSplash();
   if(firstSyncDone)return;firstSyncDone=true;
   if(pendingKok){pendingKok=false;S.bill.kok++;touch();save();render();showToast(`Kok ditambah, total ${S.bill.kok} buah`)}
 }

@@ -107,6 +107,8 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:70
 .pchip button{width:36px;height:36px;min-height:36px;padding:0;border:0;border-radius:50%;background:color-mix(in srgb,var(--c) 22%,transparent);color:inherit;font-size:15px;position:relative}
 .pchip button::after{content:"";position:absolute;inset:-4px}
 .add{display:grid;grid-template-columns:1fr auto;gap:8px}
+.clearall{align-self:flex-start;color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--line));background:transparent;font-size:14px}
+.clearall.armed{background:var(--danger);border-color:var(--danger);color:#fff}
 .seg{display:flex;border:2px solid var(--line);border-radius:14px;overflow:hidden;position:relative;isolation:isolate;background:var(--surface)}
 .seg .pill{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--n,2));border-radius:10px;background:var(--court);transform:translateX(calc(var(--i,0) * 100%));transition:transform .38s var(--ease);z-index:-1}
 .seg button{flex:1;border:0;border-radius:0;background:transparent;padding:8px 6px;font-size:14px;min-height:var(--tap)}
@@ -295,6 +297,7 @@ button.tile:hover{border-color:var(--court)}
   <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7M17 12H7"/></symbol>
   <symbol id="i-screen" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
@@ -409,30 +412,35 @@ function durText(min){const h=Math.floor(min/60),m=min%60;return (h?h+" jam":"")
    istirahat didahulukan. Ratusan susunan dicoba, lalu dipilih yang pasangannya paling
    bervariasi dan paling jarang ada orang istirahat dua game berturut-turut. */
 const pk=(a,b)=>a<b?a+"|"+b:b+"|"+a;
+const PLAYW=12; // bobot hukuman main 3+ game beruntun
 function splits(f){return [[[f[0],f[1]],[f[2],f[3]]],[[f[0],f[2]],[f[1],f[3]]],[[f[0],f[3]],[f[1],f[2]]]]}
 function combos(arr,k){const out=[];(function go(i,cur){if(cur.length===k){out.push(cur.slice());return}for(let j=i;j<arr.length;j++){cur.push(arr[j]);go(j+1,cur);cur.pop()}})(0,[]);return out}
 function buildSchedule(ids,courts,count,prior){
   // 1) yang paling sedikit main wajib masuk; 2) pasangan yang belum pernah setim diutamakan;
-  // 3) hindari istirahat dua game beruntun; 4) lawan juga diusahakan berganti.
+  // 3) hindari istirahat dua game beruntun dan main tiga game beruntun; 4) lawan juga diusahakan berganti.
   // Ratusan tabel dicoba, dipilih yang paling cepat membuat semua orang pernah setim.
   const slots=courts*4;if(ids.length<slots||count<=0)return [];
   const tries=courts===2?60:300;
   const allPairs=[];for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++)allPairs.push(pk(ids[i],ids[j]));
   let best=null,bestScore=Infinity;
   for(let t=0;t<tries;t++){
-    const cnt={},sit={},pc={},oc={};let lastQ=[],score=0;
+    const cnt={},sit={},run={},pc={},oc={};let lastQ=[],score=0;
     const play=g=>{
       const on=new Set();
       g.forEach(({a,b})=>{[...a,...b].forEach(i=>on.add(i));pc[pk(a[0],a[1])]=(pc[pk(a[0],a[1])]||0)+1;pc[pk(b[0],b[1])]=(pc[pk(b[0],b[1])]||0)+1;a.forEach(x=>b.forEach(y=>{oc[pk(x,y)]=(oc[pk(x,y)]||0)+1}))});
-      Object.keys(cnt).forEach(i=>{if(on.has(i)){cnt[i]++;sit[i]=0}else sit[i]++});
+      Object.keys(cnt).forEach(i=>{if(on.has(i)){cnt[i]++;sit[i]=0;run[i]++}else{sit[i]++;run[i]=0}});
       return g.map(c=>[...c.a,...c.b].sort().join());
     };
     const seen=new Set();prior.forEach(g=>g.courts.forEach(c=>[...c.a,...c.b].forEach(i=>seen.add(i))));
-    seen.forEach(i=>{cnt[i]=0;sit[i]=0});
+    seen.forEach(i=>{cnt[i]=0;sit[i]=0;run[i]=0});
     prior.forEach(g=>{lastQ=play(g.courts)});
-    const present=ids.filter(i=>seen.has(i));
+    // Pemain baru atau yang baru kembali (tidak ada di game terakhir) mulai dari hitungan main
+    // terendah, supaya tidak "mengejar" game yang terlewat dengan main berturut-turut.
+    const lg=prior[prior.length-1];
+    const roster=new Set(lg?[...lg.courts.flatMap(c=>[...c.a,...c.b]),...(lg.rest||[])]:[]);
+    const present=ids.filter(i=>roster.has(i));
     const base=present.length?Math.min(...present.map(i=>cnt[i])):0;
-    ids.forEach(i=>{if(!seen.has(i)){cnt[i]=base;sit[i]=1}});
+    ids.forEach(i=>{if(!roster.has(i)){cnt[i]=Math.max(cnt[i]||0,base);sit[i]=1;run[i]=0}});
     Object.keys(cnt).forEach(i=>{if(!ids.includes(i))delete cnt[i]});
     const restW=ids.length===8&&courts===1?4:10;
     const pairCost=(x,y)=>{const n=pc[pk(x,y)]||0;return n*n*8};
@@ -444,7 +452,8 @@ function buildSchedule(ids,courts,count,prior){
       const picks=combos(pool,slots-forced.length).map(c=>forced.concat(c));
       let bestG=null,bc=Infinity;
       picks.forEach(sel=>{
-        let base=0;ids.forEach(i=>{if(!sel.includes(i)&&sit[i]>=1)base+=restW*sit[i]});
+        // istirahat beruntun dan main 3+ game beruntun sama-sama dihindari
+        let base=0;ids.forEach(i=>{if(sel.includes(i)){if(run[i]>=2)base+=PLAYW*(run[i]-1)}else if(sit[i]>=1)base+=restW*sit[i]});
         const groups=courts===1?[[sel]]:combos(sel.slice(1),3).map(c=>{const g1=[sel[0],...c];return [g1,sel.filter(i=>!g1.includes(i))]});
         groups.forEach(gr=>{
           const opts=gr.map(q=>splits(q));
@@ -529,14 +538,20 @@ function afterFirstSync(){
   if(pendingKok){pendingKok=false;S.bill.kok++;touch();save();render();showToast(`Kok ditambah, total ${S.bill.kok} buah`)}
 }
 
+// Orang yang dihapus lalu ditambah lagi dengan nama sama memakai id lamanya, supaya riwayat
+// main & pasangannya di game yang sudah selesai tetap terhitung (tidak dianggap orang baru).
+function newPlayer(v){
+  const used=new Set(S.players.map(p=>p.c));let c=0;while(used.has(c)&&c<8)c++;
+  const old=Object.keys(S.names).find(id=>S.names[id].toLowerCase()===v.toLowerCase()&&!S.players.some(p=>p.id===id));
+  const p={id:old||uid(),name:v,c};S.players.push(p);S.names[p.id]=v;return p;
+}
 /* ---------- pemain dari kontak & WhatsApp (Android) ---------- */
 function addPlayers(names){
   let added=0,skipped=0;
   names.forEach(raw=>{
     const v=String(raw).trim().slice(0,16);if(!v)return;
     if(S.players.length>=8||S.players.some(p=>p.name.toLowerCase()===v.toLowerCase())){skipped++;return}
-    const used=new Set(S.players.map(p=>p.c));let c=0;while(used.has(c)&&c<8)c++;
-    const p={id:uid(),name:v,c};S.players.push(p);S.names[p.id]=v;added++;
+    newPlayer(v);added++;
   });
   if(added){touch();regenerate();save()}
   return {added,skipped};
@@ -598,7 +613,7 @@ async function syncWake(){
 document.addEventListener("visibilitychange",syncWake);
 
 /* ---------- tampilan ---------- */
-let tab="beranda",enterGames=false,boardIn=false,toastT=null;
+let tab="beranda",enterGames=false,boardIn=false,toastT=null,clearArmed=false,clearT=null;
 const TABS=["beranda","jadwal","patungan","khusus"];
 const nm=id=>S.names[id]||"?";
 const colorOf=id=>{const p=S.players.find(x=>x.id===id);return COLORS[(p?p.c:Object.keys(S.names).indexOf(id))%COLORS.length]};
@@ -632,6 +647,7 @@ function renderJadwal(){
     <div class="card-title"><b>${ic("users")}Pemain</b><span class="meta">${n} orang · 4–8</span></div>
     <div class="players">${S.players.map(p=>`<span class="pchip" style="--c:${COLORS[p.c%COLORS.length]}">${esc(p.name)}<button data-del="${p.id}" aria-label="Hapus ${esc(p.name)}">${ic("x")}</button></span>`).join("")||`<span class="note">Belum ada pemain.</span>`}</div>
     ${n<8?`<form id="addForm" class="add"><input id="newName" maxlength="16" placeholder="Nama pemain" aria-label="Nama pemain" autocomplete="off"><button class="primary" type="submit">Tambah</button></form>${CAN_CONTACTS?`<button id="fromContacts">${ic("contact")}Pilih dari kontak</button>`:""}`:`<p class="note">Sudah 8 orang, jumlah maksimal.</p>`}
+    ${n?`<button id="clearAll" class="clearall${clearArmed?" armed":""}">${ic("trash")}${clearArmed?"Ketuk lagi untuk hapus semua":"Hapus semua pemain"}</button>`:""}
     ${IS_ANDROID&&n<8?`<p class="note">${STANDALONE?"Tips: di WhatsApp, tekan lama pesan daftar nama → Bagikan → Bultang Asik.":"Pasang aplikasi ini (menu ⋮ → Instal aplikasi) supaya bisa menerima daftar nama langsung dari WhatsApp."}</p>`:""}
   </div>
   <div class="card">
@@ -953,6 +969,15 @@ document.addEventListener("click",e=>{
     return;
   }
   if(t.id==="impCancel"){pendingImport=null;render();return}
+  if(t.id==="clearAll"){
+    // ketuk dua kali supaya tidak terhapus tanpa sengaja
+    clearTimeout(clearT);
+    if(!clearArmed){clearArmed=true;haptic();render();clearT=setTimeout(()=>{clearArmed=false;render()},3500);return}
+    clearArmed=false;
+    S.players=[];S.games=[];S.names={};S.courts=1;S.bill.paid={};S.bill.paidK={};S.bill.span={};imgSig="";
+    touch();haptic();save();render();showToast("Semua pemain dihapus, tabel dikosongkan");
+    return;
+  }
   if(t.id==="wakeBtn"){
     wakeOn=!wakeOn;try{localStorage.setItem(WAKE_KEY,wakeOn?"1":"0")}catch(err){}
     haptic();render();showToast(wakeOn?"Layar tetap menyala di tab Lapangan dan Tabel":"Layar boleh mati seperti biasa");return;
@@ -1002,8 +1027,7 @@ document.addEventListener("submit",e=>{
   const inp=document.getElementById("newName");const v=(inp.value||"").trim();if(!v)return;
   if(S.players.length>=8)return;
   if(S.players.some(p=>p.name.toLowerCase()===v.toLowerCase())){showToast("Nama itu sudah ada");return}
-  const used=new Set(S.players.map(p=>p.c));let c=0;while(used.has(c)&&c<8)c++;
-  const p={id:uid(),name:v,c};S.players.push(p);S.names[p.id]=v;inp.value="";touch();regenerate();save();render();
+  newPlayer(v);inp.value="";touch();regenerate();save();render();
   const n2=document.getElementById("newName");if(n2)n2.focus();
 });
 document.addEventListener("change",e=>{

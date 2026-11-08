@@ -391,6 +391,7 @@ function normalize(x){
   x.names=x.names||{};x.players.forEach(p=>{x.names[p.id]=p.name});
   x.games=Array.isArray(x.games)?x.games:[];
   x.courts=x.courts===2?2:1;x.start=x.start||"19:00";x.end=x.end||"22:00";x.minutes=+x.minutes||12;
+  x.extra=Math.max(0,x.extra|0); // game tambahan di luar jam main (tombol "Tambah 1 game lagi")
   x.bill=Object.assign({courtPrice:60000,hours:null,kokPrice:9000,kok:0,mode:"rata",round:1000,paid:{}},x.bill||{});
   x.bill.paid=x.bill.paid||{};
   x.bill.span=x.bill.span||{};x.bill.paidK=x.bill.paidK||{};
@@ -479,8 +480,15 @@ function buildSchedule(ids,courts,count,prior){
 }
 function makeGames(s,keep){
   const ids=s.players.map(p=>p.id);
-  const rest=buildSchedule(ids,s.courts,Math.max(0,nGames(s)-keep.length),keep);
-  return keep.concat(rest.map(g=>({courts:g.courts,done:false,rest:ids.filter(i=>!g.courts.some(c=>[...c.a,...c.b].includes(i)))})));
+  const rest=buildSchedule(ids,s.courts,Math.max(0,nGames(s)+(s.extra||0)-keep.length),keep);
+  return keep.concat(rest.map(g=>gameOf(g,ids)));
+}
+const gameOf=(g,ids)=>({courts:g.courts,done:false,rest:ids.filter(i=>!g.courts.some(c=>[...c.a,...c.b].includes(i)))});
+// satu game lagi di akhir tabel, melanjutkan hitungan main/pasangan dari semua game yang ada
+function addOneGame(){
+  const ids=S.players.map(p=>p.id);if(ids.length<S.courts*4)return false;
+  const g=buildSchedule(ids,S.courts,1,S.games)[0];if(!g)return false;
+  S.extra=(S.extra||0)+1;S.games.push(gameOf(g,ids));return true;
 }
 
 /* ---------- sync grup (Firebase) ---------- */
@@ -642,7 +650,7 @@ function renderMatrix(){
 }
 function renderJadwal(){
   const n=S.players.length,ng=nGames(S),slots=S.courts*4,tot=totalMin(S);
-  const per=n?(ng*slots/n):0;
+  const per=n?((ng+(S.extra||0))*slots/n):0;
   let h=renderImport()+`<div class="card">
     <div class="card-title"><b>${ic("users")}Pemain</b><span class="meta">${n} orang · 4–8</span></div>
     <div class="players">${S.players.map(p=>`<span class="pchip" style="--c:${COLORS[p.c%COLORS.length]}">${esc(p.name)}<button data-del="${p.id}" aria-label="Hapus ${esc(p.name)}">${ic("x")}</button></span>`).join("")||`<span class="note">Belum ada pemain.</span>`}</div>
@@ -659,7 +667,7 @@ function renderJadwal(){
     </div>
     <div><div class="meta" style="margin-bottom:4px">Lapangan</div>
       <div class="seg" style="--n:2;--i:${S.courts-1}"><span class="pill" aria-hidden="true"></span><button data-courts="1" aria-pressed="${S.courts===1}">1 lapangan</button><button data-courts="2" aria-pressed="${S.courts===2}" ${n<8?"disabled":""}>2 lapangan${n<8?" (butuh 8)":""}</button></div></div>
-    ${n<4?`<div class="warn">Tambah ${4-n} pemain lagi, tabel langsung muncul (minimal 4 untuk main ganda).</div>`:`<div class="summary" id="plan"><b>${ng} game</b> dalam ${durText(tot)} · tiap orang main ±${Math.floor(per)}${per%1?"–"+Math.ceil(per):""} kali${n>slots?`, istirahat ${n-slots} orang per game`:", semua main terus"}</div>`}
+    ${n<4?`<div class="warn">Tambah ${4-n} pemain lagi, tabel langsung muncul (minimal 4 untuk main ganda).</div>`:`<div class="summary" id="plan"><b>${ng} game${S.extra?` + ${S.extra} tambahan`:""}</b> dalam ${durText(tot)} · tiap orang main ±${Math.floor(per)}${per%1?"–"+Math.ceil(per):""} kali${n>slots?`, istirahat ${n-slots} orang per game`:", semua main terus"}</div>`}
     ${n>=4?`<button id="gen">${ic("shuffle")}Acak susunan lain</button><p class="note">Tabel otomatis menyesuaikan setiap pemain atau jam diubah. Game yang sudah dicentang tidak ikut berubah.</p>`:""}
   </div>`;
   if(S.games.length){
@@ -673,6 +681,7 @@ function renderJadwal(){
         ${g.rest&&g.rest.length?`<div class="rest">Istirahat: ${g.rest.map(nm).map(esc).join(", ")}</div>`:""}</div>
       <button class="tick" data-done="${i}" aria-pressed="${!!g.done}" aria-label="Tandai game ${i+1} selesai">${ic("check")}</button>
     </div></div>`).join("")}</div>
+    <button id="addGame">${ic("plus")}Tambah 1 game lagi</button>
     ${HAS_TOUCH?`<p class="note">Tips: geser kartu game ke kanan untuk menandai selesai, geser kiri/kanan untuk pindah tab.</p>`:""}
     <div class="card"><div class="card-title"><b>${ic("chart")}Pembagian</b><span class="meta">dari ${S.games.length} game</span></div>
       <div class="tally">${S.players.map(p=>`<div style="--c:${COLORS[p.c%COLORS.length]}"><b>${esc(p.name)}</b><small>main ${t[p.id].main}× · istirahat ${t[p.id].rehat}×</small></div>`).join("")}</div>
@@ -715,8 +724,9 @@ function renderBeranda(){
   }else if(nowIdx<0){
     board=`<div class="board"><div class="board-head"><div><span class="lab">Sesi beres</span><b class="gno"><span>${total}</span> <small>game selesai</small></b></div><span class="at">${fmt(toMin(S.end))}</span></div>
       ${courtView(null)}
-      <p class="note">Semua game sudah dicentang. Tinggal tagih patungan.</p>
-      <button class="primary big" data-tab="patungan">${ic("wallet")}Buka patungan</button>${undo}</div>`;
+      <p class="note">Semua game sudah dicentang. Masih ada waktu? Tambah satu game lagi.</p>
+      <button class="primary big" id="addGame">${ic("plus")}Tambah 1 game lagi</button>
+      <button data-tab="patungan">${ic("wallet")}Buka patungan</button>${undo}</div>`;
   }else{
     const g=games[nowIdx],two=g.courts.length>1;
     board=`<div class="board${boardIn?" enter":""}"><div class="board-head"><div><span class="lab">Sekarang di lapangan</span><b class="gno">Game <span>${nowIdx+1}</span><small>/${total}</small></b></div><span class="at">${gameTime(nowIdx)}</span></div>
@@ -734,7 +744,7 @@ function renderBeranda(){
       ${incoming.length?`<div class="summary">Siap-siap masuk: ${incoming.map(nm).map(esc).join(", ")}</div>`:`<p class="note">Pemainnya sama dengan game sekarang, tidak ada yang ganti.</p>`}
       <button data-tab="jadwal">${ic("list")}Lihat semua ${total} game</button></div>`;
   }else if(nowIdx>=0){
-    next=`<p class="note">Ini game terakhir malam ini.</p>`;
+    next=`<div class="row between"><p class="note">Ini game terakhir di tabel.</p><button id="addGame">${ic("plus")}Tambah 1 game lagi</button></div>`;
   }
   let strip="";
   if(n){
@@ -963,18 +973,23 @@ document.addEventListener("click",e=>{
   }
   if(t.id==="impReplace"||t.id==="impAdd"){
     const names=pendingImport?pendingImport.names:[];pendingImport=null;
-    if(t.id==="impReplace"){S.players=[];S.games=[];S.courts=1;S.bill.paid={};S.bill.paidK={};S.bill.span={}}
+    if(t.id==="impReplace"){S.players=[];S.games=[];S.courts=1;S.extra=0;S.bill.paid={};S.bill.paidK={};S.bill.span={}}
     const r=addPlayers(names);touch();save();render();haptic();
     showToast(t.id==="impReplace"?`Sesi baru dengan ${S.players.length} pemain`:`${r.added} pemain ditambahkan${r.skipped?`, ${r.skipped} dilewati`:""}`);
     return;
   }
   if(t.id==="impCancel"){pendingImport=null;render();return}
+  if(t.id==="addGame"){
+    if(!addOneGame()){showToast("Butuh minimal 4 pemain");return}
+    touch();haptic();save();render();showToast(`Game ${S.games.length} ditambahkan`);
+    return;
+  }
   if(t.id==="clearAll"){
     // ketuk dua kali supaya tidak terhapus tanpa sengaja
     clearTimeout(clearT);
     if(!clearArmed){clearArmed=true;haptic();render();clearT=setTimeout(()=>{clearArmed=false;render()},3500);return}
     clearArmed=false;
-    S.players=[];S.games=[];S.names={};S.courts=1;S.bill.paid={};S.bill.paidK={};S.bill.span={};imgSig="";
+    S.players=[];S.games=[];S.names={};S.courts=1;S.extra=0;S.bill.paid={};S.bill.paidK={};S.bill.span={};imgSig="";
     touch();haptic();save();render();showToast("Semua pemain dihapus, tabel dikosongkan");
     return;
   }
@@ -1042,7 +1057,7 @@ document.addEventListener("change",e=>{
     if(sp.from===hm(r.st)&&sp.to===hm(r.st+r.dur))delete S.bill.span[id];else S.bill.span[id]=sp;
     touch();save();render();return;
   }
-  if(s.dataset.f){regenerate();save();render();return}
+  if(s.dataset.f){S.extra=0;regenerate();save();render();return} // jam diubah: jumlah game ikut jam lagi
   if(s.dataset.b)render();
 });
 document.addEventListener("input",e=>{

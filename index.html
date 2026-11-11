@@ -432,7 +432,8 @@ function buildSchedule(ids,courts,count,prior){
       Object.keys(cnt).forEach(i=>{if(on.has(i)){cnt[i]++;sit[i]=0;run[i]++}else{sit[i]++;run[i]=0}});
       return g.map(c=>[...c.a,...c.b].sort().join());
     };
-    const seen=new Set();prior.forEach(g=>g.courts.forEach(c=>[...c.a,...c.b].forEach(i=>seen.add(i))));
+    // yang selama ini hanya istirahat juga harus ikut dihitung (main 0×), kalau tidak hitungannya kosong
+    const seen=new Set();prior.forEach(g=>{g.courts.forEach(c=>[...c.a,...c.b].forEach(i=>seen.add(i)));(g.rest||[]).forEach(i=>seen.add(i))});
     seen.forEach(i=>{cnt[i]=0;sit[i]=0;run[i]=0});
     prior.forEach(g=>{lastQ=play(g.courts)});
     // Pemain baru atau yang baru kembali (tidak ada di game terakhir) mulai dari hitungan main

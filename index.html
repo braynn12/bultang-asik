@@ -109,6 +109,13 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:70
 .add{display:grid;grid-template-columns:1fr auto;gap:8px}
 .clearall{align-self:flex-start;color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--line));background:transparent;font-size:14px}
 .clearall.armed{background:var(--danger);border-color:var(--danger);color:#fff}
+.endbtn.armed{background:var(--danger);border-color:var(--danger);color:#fff;box-shadow:none}
+/* riwayat sesi */
+details.hist{border-top:2px solid var(--line)}
+details.hist:first-of-type{border-top:0}
+details.hist>summary{cursor:pointer;font-weight:700;font-size:14px;padding:10px 2px;min-height:var(--tap)}
+details.hist>:not(summary){margin-top:8px}
+details.hist[open]{padding-bottom:12px}
 .seg{display:flex;border:2px solid var(--line);border-radius:14px;overflow:hidden;position:relative;isolation:isolate;background:var(--surface)}
 .seg .pill{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / var(--n,2));border-radius:10px;background:var(--court);transform:translateX(calc(var(--i,0) * 100%));transition:transform .38s var(--ease);z-index:-1}
 .seg button{flex:1;border:0;border-radius:0;background:transparent;padding:8px 6px;font-size:14px;min-height:var(--tap)}
@@ -380,7 +387,7 @@ const rp=n=>"Rp"+Math.round(n).toLocaleString("id-ID");
 /* ---------- state ---------- */
 function sample(){
   const players=["Andi","Budi","Citra","Dewi","Eko","Fajar"].map((name,i)=>({id:uid(),name,c:i}));
-  const s={example:true,players,names:{},courts:1,start:"19:00",end:"22:00",minutes:12,games:[],
+  const s={example:true,players,names:{},courts:1,start:"19:00",end:"22:00",minutes:12,games:[],history:[],
     bill:{courtPrice:60000,hours:null,kokPrice:9000,kok:6,mode:"rata",round:1000,paid:{},span:{},paidK:{}}};
   players.forEach(p=>s.names[p.id]=p.name);
   s.games=makeGames(s,[]);
@@ -395,6 +402,7 @@ function normalize(x){
   x.bill=Object.assign({courtPrice:60000,hours:null,kokPrice:9000,kok:0,mode:"rata",round:1000,paid:{}},x.bill||{});
   x.bill.paid=x.bill.paid||{};
   x.bill.span=x.bill.span||{};x.bill.paidK=x.bill.paidK||{};
+  x.history=Array.isArray(x.history)?x.history.filter(h=>h&&Array.isArray(h.rows)).slice(0,5):[]; // rekap sesi yang sudah diakhiri, terbaru di depan
   return x;
 }
 let S=null;
@@ -514,7 +522,7 @@ function startSync(){
     if(snap.exists){
       const d=snap.data();
       if(d&&typeof d.json==="string"&&d.json!==lastSent&&!writeTimer&&!writing){
-        try{const next=JSON.parse(d.json);if(next&&Array.isArray(next.players)){lastSent=d.json;S=normalize(next);try{localStorage.setItem(KEY,d.json)}catch(e){}render()}}catch(e){}
+        try{const next=JSON.parse(d.json);if(next&&Array.isArray(next.players)){lastSent=d.json;S=normalize(next);if(S.players.length)endUndo=null;try{localStorage.setItem(KEY,d.json)}catch(e){}render()}}catch(e){}
       }
     }else if(!S.example)save();
     setSync("live");afterFirstSync();
@@ -552,6 +560,7 @@ function afterFirstSync(){
 function newPlayer(v){
   const used=new Set(S.players.map(p=>p.c));let c=0;while(used.has(c)&&c<8)c++;
   const old=Object.keys(S.names).find(id=>S.names[id].toLowerCase()===v.toLowerCase()&&!S.players.some(p=>p.id===id));
+  endUndo=null; // sesi baru dimulai: "Urungkan akhiri permainan" tidak berlaku lagi
   const p={id:old||uid(),name:v,c};S.players.push(p);S.names[p.id]=v;return p;
 }
 /* ---------- pemain dari kontak & WhatsApp (Android) ---------- */
@@ -623,6 +632,8 @@ document.addEventListener("visibilitychange",syncWake);
 
 /* ---------- tampilan ---------- */
 let tab="beranda",enterGames=false,boardIn=false,toastT=null,clearArmed=false,clearT=null;
+// endUndo: salinan S sebelum diakhiri, hanya di memori (tidak disinkron, hilang saat reload)
+let endArmed=false,endT=null,endUndo=null,endUndoId=null,histDel=null,histT=null;
 const TABS=["beranda","jadwal","patungan","khusus"];
 const nm=id=>S.names[id]||"?";
 const colorOf=id=>{const p=S.players.find(x=>x.id===id);return COLORS[(p?p.c:Object.keys(S.names).indexOf(id))%COLORS.length]};
@@ -656,6 +667,7 @@ function renderJadwal(){
     <div class="card-title"><b>${ic("users")}Pemain</b><span class="meta">${n} orang · 4–8</span></div>
     <div class="players">${S.players.map(p=>`<span class="pchip" style="--c:${COLORS[p.c%COLORS.length]}">${esc(p.name)}<button data-del="${p.id}" aria-label="Hapus ${esc(p.name)}">${ic("x")}</button></span>`).join("")||`<span class="note">Belum ada pemain.</span>`}</div>
     ${n<8?`<form id="addForm" class="add"><input id="newName" maxlength="16" placeholder="Nama pemain" aria-label="Nama pemain" autocomplete="off"><button class="primary" type="submit">Tambah</button></form>${CAN_CONTACTS?`<button id="fromContacts">${ic("contact")}Pilih dari kontak</button>`:""}`:`<p class="note">Sudah 8 orang, jumlah maksimal.</p>`}
+    ${n?endBtn(""):""}
     ${n?`<button id="clearAll" class="clearall${clearArmed?" armed":""}">${ic("trash")}${clearArmed?"Ketuk lagi untuk hapus semua":"Hapus semua pemain"}</button>`:""}
     ${IS_ANDROID&&n<8?`<p class="note">${STANDALONE?"Tips: di WhatsApp, tekan lama pesan daftar nama → Bagikan → Bultang Asik.":"Pasang aplikasi ini (menu ⋮ → Instal aplikasi) supaya bisa menerima daftar nama langsung dari WhatsApp."}</p>`:""}
   </div>
@@ -716,7 +728,8 @@ function renderBeranda(){
     board=`<div class="board"><div class="board-head"><div><span class="lab">Lapangan masih kosong</span><b class="gno">${n} <small>dari 4 pemain</small></b></div></div>
       ${courtView(null)}
       <p class="note">Main ganda butuh minimal 4 orang. Tambah ${4-n} lagi, lapangan langsung terisi.</p>
-      <button class="primary big" data-tab="jadwal">${ic("users")}Isi pemain</button></div>`;
+      <button class="primary big" data-tab="jadwal">${ic("users")}Isi pemain</button>
+      ${endUndo&&!n?`<button id="endUndo">${ic("x")}Urungkan akhiri permainan</button><p class="note">Salah pencet? Pemain, tabel, dan tagihan tadi bisa dikembalikan selama belum ada pemain baru.</p>`:""}</div>`;
   }else if(!total){
     board=`<div class="board"><div class="board-head"><div><span class="lab">Belum ada game</span><b class="gno">0 <small>game</small></b></div></div>
       ${courtView(null)}
@@ -726,14 +739,16 @@ function renderBeranda(){
     board=`<div class="board"><div class="board-head"><div><span class="lab">Sesi beres</span><b class="gno"><span>${total}</span> <small>game selesai</small></b></div><span class="at">${fmt(toMin(S.end))}</span></div>
       ${courtView(null)}
       <p class="note">Semua game sudah dicentang. Masih ada waktu? Tambah satu game lagi.</p>
-      <button class="primary big" id="addGame">${ic("plus")}Tambah 1 game lagi</button>
+      ${endBtn(" primary big")}
+      <button id="addGame">${ic("plus")}Tambah 1 game lagi</button>
       <button data-tab="patungan">${ic("wallet")}Buka patungan</button>${undo}</div>`;
   }else{
     const g=games[nowIdx],two=g.courts.length>1;
     board=`<div class="board${boardIn?" enter":""}"><div class="board-head"><div><span class="lab">Sekarang di lapangan</span><b class="gno">Game <span>${nowIdx+1}</span><small>/${total}</small></b></div><span class="at">${gameTime(nowIdx)}</span></div>
       ${g.courts.map((c,k)=>courtView(c,two?`Lapangan ${k+1}`:"")).join("")}
       ${g.rest&&g.rest.length?`<div class="rest">Istirahat: ${g.rest.map(nm).map(esc).join(", ")}</div>`:""}
-      <button class="primary big" data-done="${nowIdx}">${ic("check")}Game ${nowIdx+1} selesai</button>${undo}</div>`;
+      <button class="primary big" data-done="${nowIdx}">${ic("check")}Game ${nowIdx+1} selesai</button>${undo}
+      ${endBtn("")}</div>`;
   }
   let next="";
   const ni=nowIdx<0?-1:games.findIndex((g,i)=>i>nowIdx&&!g.done);
@@ -756,7 +771,7 @@ function renderBeranda(){
     </div>`;
   }
   return `<div class="row between"><span class="meta">${esc(day)} · ${fmt(toMin(S.start))}–${fmt(toMin(S.end))}${S.courts>1?" · 2 lapangan":""}</span>${total?`<span class="meta">${doneN}/${total} selesai</span>`:""}</div>
-    ${board}${next}${strip}`;
+    ${board}${next}${strip}${renderRiwayat()}`;
 }
 function billCalc(){
   const B=S.bill,hours=B.hours!=null?B.hours:totalMin(S)/60;
@@ -861,6 +876,56 @@ function renderKhusus(){
   }
   return h;
 }
+/* ---------- akhiri permainan & riwayat sesi ----------
+   Tagihan dihitung dari pemain & game yang ada, jadi sebelum pemain dikosongkan
+   rekapnya disalin ke S.history (ikut sinkron ke grup). */
+// Versi khusus dipakai kalau jam datang/pulang diisi dan belum ada yang dicentang lunas di Patungan biasa
+function sessionBill(){
+  const B=S.bill,base=billCalc(),k=base.rows.some(x=>B.span[x.id])&&!base.rows.some(x=>B.paid[x.id]);
+  return Object.assign(k?billKhusus():base,{khusus:k,paid:k?B.paidK:B.paid});
+}
+function snapEntry(){
+  const r=sessionBill(),t=tallies(),done=S.games.filter(g=>g.done).length;
+  if(!done&&!(r.rows.length&&r.total>0))return null;
+  return {id:uid(),at:Date.now(),day:new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"}),
+    start:S.start,end:S.end,courts:S.courts,done,planned:S.games.length,kok:S.bill.kok,total:r.total,khusus:r.khusus,
+    rows:r.rows.map(x=>({name:nm(x.id),main:t[x.id]?t[x.id].main:0,amt:x.amt,paid:!!r.paid[x.id]}))};
+}
+function endBtn(cls){
+  const left=S.games.filter(g=>!g.done).length;
+  let note="";
+  if(endArmed){
+    const r=S.example?null:sessionBill(),unpaid=r?r.rows.filter(x=>!r.paid[x.id]).length:0;
+    note=S.example?"Data contoh dihapus, tanpa riwayat.":(unpaid?`${unpaid} orang belum lunas. `:"")+(snapEntry()?"Tagihan disimpan di Riwayat sesi, pemain dan tabel dikosongkan.":"Pemain dan tabel dikosongkan.");
+  }
+  return `<button class="endbtn${cls}${endArmed?" armed":""}" data-end="1">${ic("check-circle")}${endArmed?(left?`Ketuk lagi · ${left} game belum dicentang`:"Ketuk lagi untuk mengakhiri"):"Akhiri permainan"}</button>${note?`<p class="note">${note}</p>`:""}`;
+}
+function endSession(){
+  const e=S.example?null:snapEntry();
+  endUndo=S.example?null:JSON.parse(JSON.stringify(S));endUndoId=e?e.id:null;
+  if(e)S.history=[e,...S.history].slice(0,5);
+  S.players=[];S.games=[];S.names={};S.courts=1;S.extra=0;S.bill.paid={};S.bill.paidK={};S.bill.span={};S.bill.kok=0;imgSig="";
+  touch();haptic();save();render();if(tab!=="beranda")setTab("beranda");
+  showToast("Permainan diakhiri, pemain dikosongkan");
+}
+function histText(h){
+  const unpaid=h.rows.filter(x=>!x.paid).map(x=>x.name);
+  return [`🏸 Rekap Bultang Asik, ${h.day}`,`${fmt(toMin(h.start))}–${fmt(toMin(h.end))} · ${h.done}/${h.planned} game · ${h.courts} lapangan · ${h.kok} kok`,`Total: ${rp(h.total)}${h.khusus?" (lapangan dibagi sesuai jam main)":""}`,"",
+    ...h.rows.map((x,i)=>`${i+1}. ${x.name}: ${rp(x.amt)}${x.paid?" ✅":""}`),...(unpaid.length?["",`Belum lunas: ${unpaid.join(", ")}`]:[])].join("\n");
+}
+function renderRiwayat(){
+  if(!S.history.length)return "";
+  return `<div class="card"><div class="card-title"><b>${ic("receipt")}Riwayat sesi</b><span class="meta">${S.history.length} sesi terakhir</span></div>
+    ${S.history.map(h=>{const id=esc(h.id),paidN=h.rows.filter(x=>x.paid).length;
+      return `<details class="hist" data-keep="${id}"><summary>${esc(h.day)} · ${fmt(toMin(h.start))}–${fmt(toMin(h.end))} · ${h.done} game · ${rp(h.total)}</summary>
+      <div class="meta">${h.done}/${h.planned} game dicentang · ${h.courts} lapangan · ${h.kok} kok · ${paidN}/${h.rows.length} lunas</div>
+      <ul class="people">${h.rows.map((x,i)=>`<li class="${x.paid?"paid":""}"><input type="checkbox" class="check"${IS_IOS?" switch":""} id="hp-${id}-${i}" data-hpaid="${id}" data-hrow="${i}" ${x.paid?"checked":""}><label for="hp-${id}-${i}" class="grow who"><b>${esc(x.name)}</b> <span class="meta">${x.main}× main · ${x.paid?"lunas":"belum"}</span></label><span class="money">${rp(x.amt)}</span></li>`).join("")}</ul>
+      <details class="txt" data-keep="t${id}"><summary>Lihat teks untuk grup</summary><textarea id="ht-${id}" readonly aria-label="Teks rekap sesi">${esc(histText(h))}</textarea></details>
+      <div class="row">${billBtns("ht-"+id)}<span class="meta copymsg"></span></div>
+      <button class="clearall${histDel===h.id?" armed":""}" data-hdel="${id}">${ic("trash")}${histDel===h.id?"Ketuk lagi untuk hapus riwayat ini":"Hapus riwayat ini"}</button>
+    </details>`}).join("")}
+  </div>`;
+}
 /* ---------- gambar tabel untuk WhatsApp ---------- */
 let imgFile=null,imgURL=null,imgSig="";
 const tableSig=()=>JSON.stringify([S.games.map(g=>g.courts),S.players.map(p=>[p.id,p.name,p.c]),S.start,S.minutes]);
@@ -942,12 +1007,14 @@ function renderImageCard(){
 function render(){
   const ae=document.activeElement,aid=ae&&ae.id&&ae.matches("input")?ae.id:null,aval=aid?ae.value:null;
   const keepName=(document.getElementById("newName")||{}).value||"";
+  const keepOpen=[...document.querySelectorAll("details[data-keep][open]")].map(d=>d.dataset.keep);
   document.getElementById("exampleBanner").hidden=!S.example;
   document.getElementById("tab-beranda").innerHTML=renderBeranda();
   document.getElementById("tab-jadwal").innerHTML=renderJadwal();
   document.getElementById("tab-patungan").innerHTML=renderPatungan();
   document.getElementById("tab-khusus").innerHTML=renderKhusus();
   const nn=document.getElementById("newName");if(nn&&keepName)nn.value=keepName;
+  document.querySelectorAll("details[data-keep]").forEach(d=>{if(keepOpen.includes(d.dataset.keep))d.open=true});
   if(aid){const el=document.getElementById(aid);if(el){el.value=aval;el.focus({preventScroll:true})}}
   enterGames=false;boardIn=false;
   syncWake();
@@ -992,6 +1059,27 @@ document.addEventListener("click",e=>{
     clearArmed=false;
     S.players=[];S.games=[];S.names={};S.courts=1;S.extra=0;S.bill.paid={};S.bill.paidK={};S.bill.span={};imgSig="";
     touch();haptic();save();render();showToast("Semua pemain dihapus, tabel dikosongkan");
+    return;
+  }
+  if(t.dataset.end){
+    clearTimeout(endT);
+    if(!endArmed){endArmed=true;haptic();render();endT=setTimeout(()=>{endArmed=false;render()},3500);return}
+    endArmed=false;endSession();
+    return;
+  }
+  if(t.id==="endUndo"){
+    if(!endUndo)return;
+    // riwayat diambil dari S sekarang (bisa sudah diubah HP lain), hanya entri dari "Akhiri" tadi yang dibuang
+    const hist=S.history.filter(h=>h.id!==endUndoId);
+    S=normalize(endUndo);S.history=hist;S.example=false;endUndo=null;endUndoId=null;
+    haptic();save();render();showToast("Permainan dikembalikan");
+    return;
+  }
+  if(t.dataset.hdel){
+    const id=t.dataset.hdel;clearTimeout(histT);
+    if(histDel!==id){histDel=id;haptic();render();histT=setTimeout(()=>{histDel=null;render()},3500);return}
+    histDel=null;S.history=S.history.filter(h=>h.id!==id);
+    touch();haptic();save();render();showToast("Riwayat dihapus");
     return;
   }
   if(t.id==="wakeBtn"){
@@ -1051,6 +1139,7 @@ document.addEventListener("change",e=>{
   // di iOS, toggle switch bawaan sudah bergetar sendiri
   if(s.dataset.paid){if(s.checked)S.bill.paid[s.dataset.paid]=true;else delete S.bill.paid[s.dataset.paid];if(!IS_IOS)haptic();touch();save();render()}
   if(s.dataset.paidk){if(s.checked)S.bill.paidK[s.dataset.paidk]=true;else delete S.bill.paidK[s.dataset.paidk];if(!IS_IOS)haptic();touch();save();render()}
+  if(s.dataset.hpaid){const h=S.history.find(x=>x.id===s.dataset.hpaid),x=h&&h.rows[+s.dataset.hrow];if(x){x.paid=s.checked;if(!IS_IOS)haptic();touch();save();render()}return}
   if(s.dataset.span){
     if(!s.value)return;
     const id=s.dataset.sid,r=billKhusus(),x=r.rows.find(y=>y.id===id);if(!x)return;

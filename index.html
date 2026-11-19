@@ -110,6 +110,13 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:70
 .pchip .pname small{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:99px;background:var(--muted);color:var(--surface)}
 .pchip.late{border-style:dashed;background:transparent;color:var(--muted)}
 .add{display:grid;grid-template-columns:1fr auto;gap:8px}
+/* anggota tersimpan */
+.members{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:2px solid var(--line)}
+.members .mlab{display:inline-flex;align-items:center;gap:6px;font-size:15px}
+.members .mlab small{font-size:12px;color:var(--muted);font-weight:700}
+.members .mini{min-height:36px;padding:4px 14px;font-size:14px}
+.mchip{display:inline-flex;align-items:center;gap:6px;min-height:var(--tap);padding:4px 14px 4px 10px;border-radius:99px;font-weight:700;font-size:16px;background:var(--surface);color:var(--fg);border:2px dashed var(--line)}
+.mchip.edit{padding:4px 10px 4px 14px;color:var(--danger);border-style:solid;border-color:color-mix(in srgb,var(--danger) 35%,var(--line))}
 .clearall{align-self:flex-start;color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--line));background:transparent;font-size:14px}
 .clearall.armed{background:var(--danger);border-color:var(--danger);color:#fff}
 .endbtn.armed{background:var(--danger);border-color:var(--danger);color:#fff;box-shadow:none}
@@ -388,9 +395,15 @@ const ic=n=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><use href="#
 const rp=n=>"Rp"+Math.round(n).toLocaleString("id-ID");
 
 /* ---------- state ---------- */
+const MAX_MEMBERS=60;
+// simpan nama ke daftar anggota (pindah ke paling depan kalau sudah ada)
+function remember(v){
+  const k=v.toLowerCase();
+  S.members=[v,...S.members.filter(m=>m.toLowerCase()!==k)].slice(0,MAX_MEMBERS);
+}
 function sample(){
   const players=["Andi","Budi","Citra","Dewi","Eko","Fajar"].map((name,i)=>({id:uid(),name,c:i}));
-  const s={example:true,players,names:{},courts:1,start:"19:00",end:"22:00",minutes:12,games:[],history:[],
+  const s={example:true,players,names:{},courts:1,start:"19:00",end:"22:00",minutes:12,games:[],history:[],members:[],
     bill:{courtPrice:60000,hours:null,kokPrice:9000,kok:6,mode:"rata",round:1000,paid:{},span:{},paidK:{}}};
   players.forEach(p=>s.names[p.id]=p.name);
   s.games=makeGames(s,[]);
@@ -406,6 +419,12 @@ function normalize(x){
   x.bill.paid=x.bill.paid||{};
   x.bill.span=x.bill.span||{};x.bill.paidK=x.bill.paidK||{};
   x.history=Array.isArray(x.history)?x.history.filter(h=>h&&Array.isArray(h.rows)).slice(0,5):[]; // rekap sesi yang sudah diakhiri, terbaru di depan
+  // anggota: nama yang pernah main, terbaru di depan; tetap ada walau permainan diakhiri.
+  // Data lama tanpa daftar ini diisi dari pemain sekarang dan riwayat sesi.
+  const seed=Array.isArray(x.members)?x.members:[...(x.example?[]:x.players.map(p=>p.name)),...x.history.flatMap(h=>h.rows.map(r=>r.name))];
+  const seen=new Set();x.members=[];
+  seed.forEach(v=>{v=String(v||"").trim().slice(0,16);const k=v.toLowerCase();if(v&&!seen.has(k)){seen.add(k);x.members.push(v)}});
+  x.members=x.members.slice(0,MAX_MEMBERS);
   return x;
 }
 let S=null;
@@ -594,7 +613,7 @@ function newPlayer(v){
   const used=new Set(S.players.map(p=>p.c));let c=0;while(used.has(c)&&c<8)c++;
   const old=Object.keys(S.names).find(id=>S.names[id].toLowerCase()===v.toLowerCase()&&!S.players.some(p=>p.id===id));
   endUndo=null; // sesi baru dimulai: "Urungkan akhiri permainan" tidak berlaku lagi
-  const p={id:old||uid(),name:v,c};S.players.push(p);S.names[p.id]=v;return p;
+  const p={id:old||uid(),name:v,c};S.players.push(p);S.names[p.id]=v;remember(v);return p;
 }
 /* ---------- pemain dari kontak & WhatsApp (Android) ---------- */
 function addPlayers(names){
@@ -664,7 +683,7 @@ async function syncWake(){
 document.addEventListener("visibilitychange",syncWake);
 
 /* ---------- tampilan ---------- */
-let tab="beranda",enterGames=false,boardIn=false,toastT=null,clearArmed=false,clearT=null;
+let tab="beranda",enterGames=false,boardIn=false,toastT=null,clearArmed=false,clearT=null,memEdit=false;
 // endUndo: salinan S sebelum diakhiri, hanya di memori (tidak disinkron, hilang saat reload)
 let endArmed=false,endT=null,endUndo=null,endUndoId=null,histDel=null,histT=null;
 const TABS=["beranda","jadwal","patungan","khusus"];
@@ -694,6 +713,20 @@ function renderMatrix(){
     <tbody>${ps.map(a=>`<tr><th style="--c:${COLORS[a.c%COLORS.length]}">${short(a.name)}</th>${ps.map(b=>a.id===b.id?`<td class="self">–</td>`:`<td class="v${Math.min(pc[pk(a.id,b.id)]||0,3)}">${pc[pk(a.id,b.id)]||0}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
     <p class="note">Angka = berapa kali dua orang itu satu tim di tabel ini.</p></div>`;
 }
+// anggota yang belum ada di daftar pemain: ketuk untuk menambahkan, mode "Atur" untuk menghapus dari daftar
+function renderMembers(all){
+  const inList=new Set(S.players.map(p=>p.name.toLowerCase()));
+  const ms=S.members.filter(m=>!inList.has(m.toLowerCase()));
+  if(!ms.length){memEdit=false;return ""}
+  if(all>=8&&!memEdit)return "";
+  return `<div class="members">
+    <div class="row between"><b class="mlab">${ic("users")}Anggota <small>${ms.length}</small></b><button id="memEdit" class="mini" aria-pressed="${memEdit}">${memEdit?"Selesai":"Atur"}</button></div>
+    <div class="players">${ms.map(m=>memEdit
+      ?`<button class="mchip edit" data-memdel="${esc(m)}" aria-label="Hapus ${esc(m)} dari anggota">${esc(m)}${ic("x")}</button>`
+      :`<button class="mchip" data-mem="${esc(m)}" aria-label="Tambahkan ${esc(m)}">${ic("plus")}${esc(m)}</button>`).join("")}</div>
+    <p class="note">${memEdit?"Ketuk nama untuk menghapusnya dari daftar anggota. Riwayat sesi tidak ikut terhapus.":"Ketuk nama untuk memasukkannya ke pemain hari ini. Nama baru otomatis tersimpan di sini."}</p>
+  </div>`;
+}
 function renderJadwal(){
   const all=S.players.length,n=here(S).length,lateN=all-n,ng=nGames(S),slots=courtsFor(S,n)*4,tot=totalMin(S);
   const per=n?((ng+(S.extra||0))*slots/n):0;
@@ -702,6 +735,7 @@ function renderJadwal(){
     <div class="players">${S.players.map(p=>`<span class="pchip${p.late?" late":""}" style="--c:${COLORS[p.c%COLORS.length]}"><button class="pname" data-late="${p.id}" aria-pressed="${!!p.late}" aria-label="${esc(p.name)}${p.late?", telat. Ketuk kalau sudah datang":". Ketuk kalau telat"}">${esc(p.name)}${p.late?"<small>telat</small>":""}</button><button data-del="${p.id}" aria-label="Hapus ${esc(p.name)}">${ic("x")}</button></span>`).join("")||`<span class="note">Belum ada pemain.</span>`}</div>
     ${all?`<p class="note">Ketuk nama yang belum datang (atau pulang duluan) untuk menandai <b>telat</b>, dan ketuk lagi saat dia datang. Tabel disusun ulang tanpa mengubah game yang sedang berjalan.</p>`:""}
     ${all<8?`<form id="addForm" class="add"><input id="newName" maxlength="16" placeholder="Nama pemain" aria-label="Nama pemain" autocomplete="off"><button class="primary" type="submit">Tambah</button></form>${CAN_CONTACTS?`<button id="fromContacts">${ic("contact")}Pilih dari kontak</button>`:""}`:`<p class="note">Sudah 8 orang, jumlah maksimal.</p>`}
+    ${renderMembers(all)}
     ${all?endBtn(""):""}
     ${all?`<button id="clearAll" class="clearall${clearArmed?" armed":""}">${ic("trash")}${clearArmed?"Ketuk lagi untuk hapus semua":"Hapus semua pemain"}</button>`:""}
     ${IS_ANDROID&&all<8?`<p class="note">${STANDALONE?"Tips: di WhatsApp, tekan lama pesan daftar nama → Bagikan → Bultang Asik.":"Pasang aplikasi ini (menu ⋮ → Instal aplikasi) supaya bisa menerima daftar nama langsung dari WhatsApp."}</p>`:""}
@@ -1152,7 +1186,18 @@ document.addEventListener("click",e=>{
     try{navigator.clipboard.writeText(ta.value).then(()=>{msg.textContent="Tersalin ✓";showToast("Tersalin, tinggal tempel di WhatsApp")},fb)}catch(err){fb()}
     return;
   }
-  if(t.dataset.del){S.players=S.players.filter(p=>p.id!==t.dataset.del);if(S.players.length<8)S.courts=1;touch();regenerate();haptic()}
+  if(t.id==="memEdit"){memEdit=!memEdit;haptic();render();return}
+  if(t.dataset.mem){
+    const v=t.dataset.mem;
+    if(S.players.length>=8){showToast("Sudah 8 orang, jumlah maksimal");return}
+    if(S.players.some(p=>p.name.toLowerCase()===v.toLowerCase()))return;
+    newPlayer(v);touch();regenerate();haptic();
+  }
+  else if(t.dataset.memdel){
+    const v=t.dataset.memdel;S.members=S.members.filter(m=>m.toLowerCase()!==v.toLowerCase());
+    touch();haptic();showToast(`${v} dihapus dari anggota`);
+  }
+  else if(t.dataset.del){S.players=S.players.filter(p=>p.id!==t.dataset.del);if(S.players.length<8)S.courts=1;touch();regenerate();haptic()}
   else if(t.dataset.courts){if(S.courts===+t.dataset.courts)return;S.courts=+t.dataset.courts;touch();regenerate()}
   else if(t.id==="gen"){touch();regenerate();haptic();showToast("Susunan baru dibuat")}
   else if(t.dataset.late){

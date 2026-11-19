@@ -106,6 +106,9 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:70
 .pchip{display:inline-flex;align-items:center;gap:4px;padding:3px 3px 3px 14px;min-height:var(--tap);border-radius:99px;font-weight:700;font-size:16px;background:color-mix(in srgb,var(--c) 16%,var(--surface));color:var(--c);border:2px solid color-mix(in srgb,var(--c) 30%,transparent)}
 .pchip button{width:36px;height:36px;min-height:36px;padding:0;border:0;border-radius:50%;background:color-mix(in srgb,var(--c) 22%,transparent);color:inherit;font-size:15px;position:relative}
 .pchip button::after{content:"";position:absolute;inset:-4px}
+.pchip .pname{width:auto;border-radius:99px;padding:0 6px 0 0;background:none;font:inherit;display:inline-flex;align-items:center;gap:6px}
+.pchip .pname small{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:99px;background:var(--muted);color:var(--surface)}
+.pchip.late{border-style:dashed;background:transparent;color:var(--muted)}
 .add{display:grid;grid-template-columns:1fr auto;gap:8px}
 .clearall{align-self:flex-start;color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,var(--line));background:transparent;font-size:14px}
 .clearall.armed{background:var(--danger);border-color:var(--danger);color:#fff}
@@ -417,86 +420,116 @@ function nGames(s){return Math.max(0,Math.floor(totalMin(s)/Math.max(5,s.minutes
 function durText(min){const h=Math.floor(min/60),m=min%60;return (h?h+" jam":"")+(h&&m?" ":"")+(m?m+" menit":"")||"0 menit"}
 
 /* ---------- pembuat tabel yang adil ----------
-   Tiap game diisi pemain dengan jumlah main paling sedikit; kalau sama, yang paling lama
-   istirahat didahulukan. Ratusan susunan dicoba, lalu dipilih yang pasangannya paling
-   bervariasi dan paling jarang ada orang istirahat dua game berturut-turut. */
+   Seluruh tabel disusun sekaligus lalu diperbaiki ribuan kali secara acak (simulated annealing).
+   Urutan prioritas: jumlah main rata (selisih maks 1) > tidak istirahat 3 game beruntun >
+   pasangan serata mungkin (belum pernah setim didahulukan) > lawan serata mungkin >
+   pasangan/lawan yang sama tidak muncul berdekatan > tidak main 3 game beruntun. */
 const pk=(a,b)=>a<b?a+"|"+b:b+"|"+a;
-const PLAYW=12; // bobot hukuman main 3+ game beruntun
-function splits(f){return [[[f[0],f[1]],[f[2],f[3]]],[[f[0],f[2]],[f[1],f[3]]],[[f[0],f[3]],[f[1],f[2]]]]}
-function combos(arr,k){const out=[];(function go(i,cur){if(cur.length===k){out.push(cur.slice());return}for(let j=i;j<arr.length;j++){cur.push(arr[j]);go(j+1,cur);cur.pop()}})(0,[]);return out}
+const SW={bal:400,spread:3000,rest3:2500,rest2:1,play3:6,pair:40,pairGap:24,opp:10,oppGap:6,unmet:60};
 function buildSchedule(ids,courts,count,prior){
-  // 1) yang paling sedikit main wajib masuk; 2) pasangan yang belum pernah setim diutamakan;
-  // 3) hindari istirahat dua game beruntun dan main tiga game beruntun; 4) lawan juga diusahakan berganti.
-  // Ratusan tabel dicoba, dipilih yang paling cepat membuat semua orang pernah setim.
-  const slots=courts*4;if(ids.length<slots||count<=0)return [];
-  const tries=courts===2?60:300;
-  const allPairs=[];for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++)allPairs.push(pk(ids[i],ids[j]));
-  let best=null,bestScore=Infinity;
-  for(let t=0;t<tries;t++){
-    const cnt={},sit={},run={},pc={},oc={};let lastQ=[],score=0;
-    const play=g=>{
-      const on=new Set();
-      g.forEach(({a,b})=>{[...a,...b].forEach(i=>on.add(i));pc[pk(a[0],a[1])]=(pc[pk(a[0],a[1])]||0)+1;pc[pk(b[0],b[1])]=(pc[pk(b[0],b[1])]||0)+1;a.forEach(x=>b.forEach(y=>{oc[pk(x,y)]=(oc[pk(x,y)]||0)+1}))});
-      Object.keys(cnt).forEach(i=>{if(on.has(i)){cnt[i]++;sit[i]=0;run[i]++}else{sit[i]++;run[i]=0}});
-      return g.map(c=>[...c.a,...c.b].sort().join());
-    };
-    // yang selama ini hanya istirahat juga harus ikut dihitung (main 0×), kalau tidak hitungannya kosong
-    const seen=new Set();prior.forEach(g=>{g.courts.forEach(c=>[...c.a,...c.b].forEach(i=>seen.add(i)));(g.rest||[]).forEach(i=>seen.add(i))});
-    seen.forEach(i=>{cnt[i]=0;sit[i]=0;run[i]=0});
-    prior.forEach(g=>{lastQ=play(g.courts)});
-    // Pemain baru atau yang baru kembali (tidak ada di game terakhir) mulai dari hitungan main
-    // terendah, supaya tidak "mengejar" game yang terlewat dengan main berturut-turut.
-    const lg=prior[prior.length-1];
-    const roster=new Set(lg?[...lg.courts.flatMap(c=>[...c.a,...c.b]),...(lg.rest||[])]:[]);
-    const present=ids.filter(i=>roster.has(i));
-    const base=present.length?Math.min(...present.map(i=>cnt[i])):0;
-    ids.forEach(i=>{if(!roster.has(i)){cnt[i]=Math.max(cnt[i]||0,base);sit[i]=1;run[i]=0}});
-    Object.keys(cnt).forEach(i=>{if(!ids.includes(i))delete cnt[i]});
-    const restW=ids.length===8&&courts===1?4:10;
-    const pairCost=(x,y)=>{const n=pc[pk(x,y)]||0;return n*n*8};
-    const games=[];
-    for(let g=0;g<count;g++){
-      const ord=ids.slice().sort(()=>Math.random()-.5).sort((x,y)=>cnt[x]-cnt[y]);
-      const thr=cnt[ord[slots-1]];
-      const forced=ord.filter(i=>cnt[i]<thr),pool=ord.filter(i=>cnt[i]===thr);
-      const picks=combos(pool,slots-forced.length).map(c=>forced.concat(c));
-      let bestG=null,bc=Infinity;
-      picks.forEach(sel=>{
-        // istirahat beruntun dan main 3+ game beruntun sama-sama dihindari
-        let base=0;ids.forEach(i=>{if(sel.includes(i)){if(run[i]>=2)base+=PLAYW*(run[i]-1)}else if(sit[i]>=1)base+=restW*sit[i]});
-        const groups=courts===1?[[sel]]:combos(sel.slice(1),3).map(c=>{const g1=[sel[0],...c];return [g1,sel.filter(i=>!g1.includes(i))]});
-        groups.forEach(gr=>{
-          const opts=gr.map(q=>splits(q));
-          const pick=gr.length===1?opts[0].map(o=>[o]):opts[0].flatMap(o1=>opts[1].map(o2=>[o1,o2]));
-          pick.forEach(p=>{
-            let c=base;
-            p.forEach(([a,b])=>{c+=pairCost(a[0],a[1])+pairCost(b[0],b[1]);a.forEach(x=>b.forEach(y=>{c+=oc[pk(x,y)]||0}))});
-            p.forEach(([a,b])=>{if(lastQ.includes([...a,...b].sort().join()))c+=6});
-            c+=Math.random()*0.5;
-            if(c<bc){bc=c;bestG=p}
-          });
-        });
-      });
-      const gm=bestG.map(([a,b])=>({a,b}));
-      score+=bc;lastQ=play(gm);
-      score+=allPairs.filter(k=>!pc[k]).length*1.5; // makin cepat semua pernah setim, makin baik
-      games.push({courts:gm});
-    }
-    const v=ids.map(i=>cnt[i]);score+=Math.max(0,Math.max(...v)-Math.min(...v)-1)*1000;
-    if(score<bestScore){bestScore=score;best=games}
+  const slots=courts*4,n=ids.length;if(n<slots||count<=0)return [];
+  const ix={};ids.forEach((id,i)=>ix[id]=i);
+  const cnt0=new Float64Array(n),rr0=new Int32Array(n),pr0=new Int32Array(n);
+  const pc0=new Int32Array(n*n),oc0=new Int32Array(n*n),lp0=new Float64Array(n*n).fill(-1e9),lo0=new Float64Array(n*n).fill(-1e9);
+  const P=prior.length;
+  prior.forEach((g,gi)=>{
+    const t=gi-P,on=new Set();
+    g.courts.forEach(({a,b})=>{
+      const A=a.map(x=>ix[x]),B=b.map(x=>ix[x]);[...A,...B].forEach(i=>i!==undefined&&on.add(i));
+      [A,B].forEach(([x,y])=>{if(x!==undefined&&y!==undefined){const p=x<y?x*n+y:y*n+x;pc0[p]++;lp0[p]=t}});
+      A.forEach(x=>B.forEach(y=>{if(x!==undefined&&y!==undefined){const p=x<y?x*n+y:y*n+x;oc0[p]++;lo0[p]=t}}));
+    });
+    for(let i=0;i<n;i++)if(on.has(i)){cnt0[i]++;pr0[i]++;rr0[i]=0}else{rr0[i]++;pr0[i]=0}
+  });
+  // Pemain baru atau yang baru kembali (tidak ada di game terakhir) mulai dari hitungan main
+  // terendah, supaya tidak "mengejar" game yang terlewat dengan main berturut-turut. Dia dianggap
+  // sudah istirahat 2 game, jadi langsung main di game berikutnya.
+  const lg=prior[P-1];
+  if(lg){
+    const roster=new Set([...lg.courts.flatMap(c=>[...c.a,...c.b]),...(lg.rest||[])]);
+    const present=ids.filter(i=>roster.has(i)).map(i=>ix[i]);
+    const base=present.length?Math.min(...present.map(i=>cnt0[i])):0;
+    ids.forEach((id,i)=>{if(!roster.has(id)){cnt0[i]=Math.max(cnt0[i],base);rr0[i]=2;pr0[i]=0}});
   }
-  return best;
+  const cnt=new Float64Array(n),rr=new Int32Array(n),pr=new Int32Array(n),pc=new Int32Array(n*n),oc=new Int32Array(n*n),lp=new Float64Array(n*n),lo=new Float64Array(n*n);
+  const pair=(x,y,t)=>{const p=x<y?x*n+y:y*n+x,v=pc[p];const c=SW.pair*(2*v+1)+SW.pairGap/(t-lp[p]);pc[p]=v+1;lp[p]=t;return c};
+  const opp=(x,y,t)=>{const p=x<y?x*n+y:y*n+x,v=oc[p];const c=SW.opp*(2*v+1)+SW.oppGap/(t-lo[p]);oc[p]=v+1;lo[p]=t;return c};
+  // tiap game = urutan semua pemain: posisi 0..slots-1 main (per lapangan: a0 a1 b0 b1), sisanya istirahat
+  const cost=G=>{
+    cnt.set(cnt0);rr.set(rr0);pr.set(pr0);pc.set(pc0);oc.set(oc0);lp.set(lp0);lo.set(lo0);
+    let c=0;
+    for(let t=0;t<count;t++){
+      const g=G[t];
+      for(let k=0;k<slots;k+=4){
+        const a0=g[k],a1=g[k+1],b0=g[k+2],b1=g[k+3];
+        c+=pair(a0,a1,t)+pair(b0,b1,t)+opp(a0,b0,t)+opp(a0,b1,t)+opp(a1,b0,t)+opp(a1,b1,t);
+      }
+      for(let k=0;k<slots;k++){const i=g[k];cnt[i]++;rr[i]=0;if(++pr[i]>=3)c+=SW.play3*(pr[i]-2)}
+      for(let k=slots;k<n;k++){const i=g[k];pr[i]=0;const r=++rr[i];if(r===2)c+=SW.rest2;else if(r>=3)c+=SW.rest3*(r-2)}
+    }
+    let mx=-1e9,mn=1e9;for(let i=0;i<n;i++){const v=cnt[i];c+=SW.bal*v*v;if(v>mx)mx=v;if(v<mn)mn=v}
+    if(mx-mn>1)c+=SW.spread*(mx-mn-1);
+    // tiap dua orang minimal sekali bertemu (setim atau berlawanan)
+    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const p=i*n+j;if(!pc[p]&&!oc[p])c+=SW.unmet}
+    return c;
+  };
+  const rnd=k=>Math.floor(Math.random()*k);
+  const shuffled=()=>{const a=ids.map((_,i)=>i);for(let i=n-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a};
+  const iters=Math.min(40000,Math.max(4000,count*n*120));
+  let best=null,bestC=Infinity;
+  for(let rs=0;rs<3;rs++){
+    const G=Array.from({length:count},shuffled);
+    let cur=cost(G);
+    let T=60;const cool=Math.pow(0.05/T,1/iters);
+    for(let it=0;it<iters;it++,T*=cool){
+      const r=Math.random();let undo;
+      if(r<0.6||count<2){
+        // tukar dua posisi dalam satu game (ganti pasangan/lawan, atau main <-> istirahat)
+        const g=G[rnd(count)],i=rnd(slots),j=rnd(n);if(i===j)continue;
+        [g[i],g[j]]=[g[j],g[i]];undo=()=>{[g[i],g[j]]=[g[j],g[i]]};
+      }else if(r<0.9&&n>slots){
+        // A main di game g & istirahat di h, B sebaliknya: tukar keduanya (jumlah main tetap)
+        const g=G[rnd(count)],h=G[rnd(count)];if(g===h)continue;
+        const i=rnd(slots),A=g[i],hi=h.indexOf(A);if(hi<slots)continue;
+        const cand=[];for(let k=0;k<slots;k++){const B=h[k],gj=g.indexOf(B);if(gj>=slots)cand.push([k,gj])}
+        if(!cand.length)continue;
+        const [hk,gj]=cand[rnd(cand.length)];
+        [g[i],g[gj]]=[g[gj],g[i]];[h[hk],h[hi]]=[h[hi],h[hk]];
+        undo=()=>{[h[hk],h[hi]]=[h[hi],h[hk]];[g[i],g[gj]]=[g[gj],g[i]]};
+      }else{
+        // tukar urutan dua game
+        const x=rnd(count),y=rnd(count);if(x===y)continue;
+        [G[x],G[y]]=[G[y],G[x]];undo=()=>{[G[x],G[y]]=[G[y],G[x]]};
+      }
+      const nc=cost(G);
+      if(nc<=cur||Math.random()<Math.exp((cur-nc)/T))cur=nc;else undo();
+    }
+    if(cur<bestC){bestC=cur;best=G.map(g=>g.slice())}
+  }
+  return best.map(g=>{
+    const courtsOut=[];
+    for(let k=0;k<slots;k+=4){
+      // acak sisi kiri/kanan dan urutan nama supaya tampilannya tidak berpola
+      let a=[ids[g[k]],ids[g[k+1]]],b=[ids[g[k+2]],ids[g[k+3]]];
+      if(Math.random()<.5)a.reverse();if(Math.random()<.5)b.reverse();if(Math.random()<.5)[a,b]=[b,a];
+      courtsOut.push({a,b});
+    }
+    return {courts:courtsOut};
+  });
 }
+// pemain yang ditandai telat (belum datang / pulang duluan) tidak dimasukkan ke tabel
+const here=s=>s.players.filter(p=>!p.late).map(p=>p.id);
+const courtsFor=(s,n)=>s.courts===2&&n>=8?2:1;
 function makeGames(s,keep){
-  const ids=s.players.map(p=>p.id);
-  const rest=buildSchedule(ids,s.courts,Math.max(0,nGames(s)+(s.extra||0)-keep.length),keep);
+  const ids=here(s);
+  const rest=buildSchedule(ids,courtsFor(s,ids.length),Math.max(0,nGames(s)+(s.extra||0)-keep.length),keep);
   return keep.concat(rest.map(g=>gameOf(g,ids)));
 }
 const gameOf=(g,ids)=>({courts:g.courts,done:false,rest:ids.filter(i=>!g.courts.some(c=>[...c.a,...c.b].includes(i)))});
 // satu game lagi di akhir tabel, melanjutkan hitungan main/pasangan dari semua game yang ada
 function addOneGame(){
-  const ids=S.players.map(p=>p.id);if(ids.length<S.courts*4)return false;
-  const g=buildSchedule(ids,S.courts,1,S.games)[0];if(!g)return false;
+  const ids=here(S);if(ids.length<4)return false;
+  const g=buildSchedule(ids,courtsFor(S,ids.length),1,S.games)[0];if(!g)return false;
   S.extra=(S.extra||0)+1;S.games.push(gameOf(g,ids));return true;
 }
 
@@ -641,7 +674,8 @@ const chip=id=>`<span class="n" style="--c:${colorOf(id)}">${esc(nm(id))}</span>
 function showToast(t){const el=document.getElementById("toast");el.textContent=t;el.hidden=false;el.classList.remove("show");void el.offsetWidth;el.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,3200)}
 function tallies(){
   const m={};S.players.forEach(p=>m[p.id]={main:0,rehat:0});
-  S.games.forEach(g=>{const on=new Set(g.courts.flatMap(c=>[...c.a,...c.b]));Object.keys(m).forEach(i=>{if(on.has(i))m[i].main++;else m[i].rehat++});on.forEach(i=>{if(!m[i])m[i]={main:1,rehat:0,gone:true}})});
+  // yang telat tidak dihitung istirahat di game yang dia lewatkan
+  S.games.forEach(g=>{const on=new Set(g.courts.flatMap(c=>[...c.a,...c.b])),off=new Set(g.rest||[]);Object.keys(m).forEach(i=>{if(on.has(i))m[i].main++;else if(off.has(i))m[i].rehat++});on.forEach(i=>{if(!m[i])m[i]={main:1,rehat:0,gone:true}})});
   return m;
 }
 function gameTime(i){const st=toMin(S.start)+i*S.minutes;return fmt(st)}
@@ -661,15 +695,16 @@ function renderMatrix(){
     <p class="note">Angka = berapa kali dua orang itu satu tim di tabel ini.</p></div>`;
 }
 function renderJadwal(){
-  const n=S.players.length,ng=nGames(S),slots=S.courts*4,tot=totalMin(S);
+  const all=S.players.length,n=here(S).length,lateN=all-n,ng=nGames(S),slots=courtsFor(S,n)*4,tot=totalMin(S);
   const per=n?((ng+(S.extra||0))*slots/n):0;
   let h=renderImport()+`<div class="card">
-    <div class="card-title"><b>${ic("users")}Pemain</b><span class="meta">${n} orang · 4–8</span></div>
-    <div class="players">${S.players.map(p=>`<span class="pchip" style="--c:${COLORS[p.c%COLORS.length]}">${esc(p.name)}<button data-del="${p.id}" aria-label="Hapus ${esc(p.name)}">${ic("x")}</button></span>`).join("")||`<span class="note">Belum ada pemain.</span>`}</div>
-    ${n<8?`<form id="addForm" class="add"><input id="newName" maxlength="16" placeholder="Nama pemain" aria-label="Nama pemain" autocomplete="off"><button class="primary" type="submit">Tambah</button></form>${CAN_CONTACTS?`<button id="fromContacts">${ic("contact")}Pilih dari kontak</button>`:""}`:`<p class="note">Sudah 8 orang, jumlah maksimal.</p>`}
-    ${n?endBtn(""):""}
-    ${n?`<button id="clearAll" class="clearall${clearArmed?" armed":""}">${ic("trash")}${clearArmed?"Ketuk lagi untuk hapus semua":"Hapus semua pemain"}</button>`:""}
-    ${IS_ANDROID&&n<8?`<p class="note">${STANDALONE?"Tips: di WhatsApp, tekan lama pesan daftar nama → Bagikan → Bultang Asik.":"Pasang aplikasi ini (menu ⋮ → Instal aplikasi) supaya bisa menerima daftar nama langsung dari WhatsApp."}</p>`:""}
+    <div class="card-title"><b>${ic("users")}Pemain</b><span class="meta">${all} orang${lateN?` · ${lateN} telat`:""} · 4–8</span></div>
+    <div class="players">${S.players.map(p=>`<span class="pchip${p.late?" late":""}" style="--c:${COLORS[p.c%COLORS.length]}"><button class="pname" data-late="${p.id}" aria-pressed="${!!p.late}" aria-label="${esc(p.name)}${p.late?", telat. Ketuk kalau sudah datang":". Ketuk kalau telat"}">${esc(p.name)}${p.late?"<small>telat</small>":""}</button><button data-del="${p.id}" aria-label="Hapus ${esc(p.name)}">${ic("x")}</button></span>`).join("")||`<span class="note">Belum ada pemain.</span>`}</div>
+    ${all?`<p class="note">Ketuk nama yang belum datang (atau pulang duluan) untuk menandai <b>telat</b>, dan ketuk lagi saat dia datang. Tabel disusun ulang tanpa mengubah game yang sedang berjalan.</p>`:""}
+    ${all<8?`<form id="addForm" class="add"><input id="newName" maxlength="16" placeholder="Nama pemain" aria-label="Nama pemain" autocomplete="off"><button class="primary" type="submit">Tambah</button></form>${CAN_CONTACTS?`<button id="fromContacts">${ic("contact")}Pilih dari kontak</button>`:""}`:`<p class="note">Sudah 8 orang, jumlah maksimal.</p>`}
+    ${all?endBtn(""):""}
+    ${all?`<button id="clearAll" class="clearall${clearArmed?" armed":""}">${ic("trash")}${clearArmed?"Ketuk lagi untuk hapus semua":"Hapus semua pemain"}</button>`:""}
+    ${IS_ANDROID&&all<8?`<p class="note">${STANDALONE?"Tips: di WhatsApp, tekan lama pesan daftar nama → Bagikan → Bultang Asik.":"Pasang aplikasi ini (menu ⋮ → Instal aplikasi) supaya bisa menerima daftar nama langsung dari WhatsApp."}</p>`:""}
   </div>
   <div class="card">
     <div class="card-title"><b>${ic("clock")}Waktu main</b><span class="meta">${durText(tot)}</span></div>
@@ -679,8 +714,8 @@ function renderJadwal(){
       <label class="f last">Menit per game<input type="number" id="f-min" data-f="minutes" inputmode="numeric" min="5" max="40" step="1" value="${S.minutes}"></label>
     </div>
     <div><div class="meta" style="margin-bottom:4px">Lapangan</div>
-      <div class="seg" style="--n:2;--i:${S.courts-1}"><span class="pill" aria-hidden="true"></span><button data-courts="1" aria-pressed="${S.courts===1}">1 lapangan</button><button data-courts="2" aria-pressed="${S.courts===2}" ${n<8?"disabled":""}>2 lapangan${n<8?" (butuh 8)":""}</button></div></div>
-    ${n<4?`<div class="warn">Tambah ${4-n} pemain lagi, tabel langsung muncul (minimal 4 untuk main ganda).</div>`:`<div class="summary" id="plan"><b>${ng} game${S.extra?` + ${S.extra} tambahan`:""}</b> dalam ${durText(tot)} · tiap orang main ±${Math.floor(per)}${per%1?"–"+Math.ceil(per):""} kali${n>slots?`, istirahat ${n-slots} orang per game`:", semua main terus"}</div>`}
+      <div class="seg" style="--n:2;--i:${S.courts-1}"><span class="pill" aria-hidden="true"></span><button data-courts="1" aria-pressed="${S.courts===1}">1 lapangan</button><button data-courts="2" aria-pressed="${S.courts===2}" ${all<8?"disabled":""}>2 lapangan${all<8?" (butuh 8)":""}</button></div></div>
+    ${n<4?`<div class="warn">${all>=4?`Baru ${n} orang yang datang. Tabel muncul begitu sudah 4 orang. Ketuk nama yang sudah datang supaya tanda telatnya hilang.`:`Tambah ${4-n} pemain lagi, tabel langsung muncul (minimal 4 untuk main ganda).`}</div>`:`<div class="summary" id="plan"><b>${ng} game${S.extra?` + ${S.extra} tambahan`:""}</b> dalam ${durText(tot)} · tiap orang main ±${Math.floor(per)}${per%1?"–"+Math.ceil(per):""} kali${n>slots?`, istirahat ${n-slots} orang per game`:", semua main terus"}${S.courts===2&&slots===4?" · sementara 1 lapangan sampai 8 orang datang":""}</div>`}
     ${n>=4?`<button id="gen">${ic("shuffle")}Acak susunan lain</button><p class="note">Tabel otomatis menyesuaikan setiap pemain atau jam diubah. Game yang sudah dicentang tidak ikut berubah.</p>`:""}
   </div>`;
   if(S.games.length){
@@ -718,7 +753,7 @@ function courtView(c,label){
   return `${label?`<div class="court-lab">${label}</div>`:""}<div class="court">${COURT_SVG}${names}${sr}</div>`;
 }
 function renderBeranda(){
-  const n=S.players.length,games=S.games,total=games.length;
+  const all=S.players.length,n=here(S).length,games=S.games,total=games.length;
   const nowIdx=games.findIndex(g=>!g.done),doneN=games.filter(g=>g.done).length;
   let lastDone=-1;games.forEach((g,i)=>{if(g.done)lastDone=i});
   const day=new Date().toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
@@ -727,9 +762,9 @@ function renderBeranda(){
   if(n<4){
     board=`<div class="board"><div class="board-head"><div><span class="lab">Lapangan masih kosong</span><b class="gno">${n} <small>dari 4 pemain</small></b></div></div>
       ${courtView(null)}
-      <p class="note">Main ganda butuh minimal 4 orang. Tambah ${4-n} lagi, lapangan langsung terisi.</p>
-      <button class="primary big" data-tab="jadwal">${ic("users")}Isi pemain</button>
-      ${endUndo&&!n?`<button id="endUndo">${ic("x")}Urungkan akhiri permainan</button><p class="note">Salah pencet? Pemain, tabel, dan tagihan tadi bisa dikembalikan selama belum ada pemain baru.</p>`:""}</div>`;
+      <p class="note">${all>=4?`Masih menunggu yang telat. Begitu ${4-n} orang lagi datang, lapangan langsung terisi.`:`Main ganda butuh minimal 4 orang. Tambah ${4-n} lagi, lapangan langsung terisi.`}</p>
+      <button class="primary big" data-tab="jadwal">${ic("users")}${all>=4?"Tandai yang sudah datang":"Isi pemain"}</button>
+      ${endUndo&&!all?`<button id="endUndo">${ic("x")}Urungkan akhiri permainan</button><p class="note">Salah pencet? Pemain, tabel, dan tagihan tadi bisa dikembalikan selama belum ada pemain baru.</p>`:""}</div>`;
   }else if(!total){
     board=`<div class="board"><div class="board-head"><div><span class="lab">Belum ada game</span><b class="gno">0 <small>game</small></b></div></div>
       ${courtView(null)}
@@ -763,7 +798,7 @@ function renderBeranda(){
     next=`<div class="row between"><p class="note">Ini game terakhir di tabel.</p><button id="addGame">${ic("plus")}Tambah 1 game lagi</button></div>`;
   }
   let strip="";
-  if(n){
+  if(all){
     const r=billCalc(),paidN=r.rows.filter(x=>S.bill.paid[x.id]).length;
     strip=`<div class="strip">
       <div class="tile"><span class="lab">Kok terpakai</span><div class="stepper"><button data-kok="-1" aria-label="Kurangi kok">${ic("minus")}</button><b>${S.bill.kok}</b><button data-kok="1" aria-label="Tambah kok">${ic("plus")}</button></div></div>
@@ -1019,11 +1054,16 @@ function render(){
   enterGames=false;boardIn=false;
   syncWake();
 }
-function regenerate(){
+function regenerate(keepNow){
   // keep games up to the last one ticked as done, rebuild the rest
+  // keepNow: game yang sedang berjalan juga tidak diubah (dipakai saat pemain telat datang)
   let last=-1;S.games.forEach((g,i)=>{if(g.done)last=i});
   const keep=S.games.slice(0,last+1).map(g=>Object.assign({},g,{done:true}));
-  S.games=S.players.length>=4?makeGames(S,keep):keep;enterGames=true;
+  // yang baru ditandai telat dihapus dari daftar istirahatnya; yang baru datang tidak ditambahkan
+  // (supaya dianggap pemain yang baru kembali dan didahulukan main)
+  const cur=keepNow&&S.games[last+1],gone=new Set(S.players.filter(p=>p.late).map(p=>p.id));
+  if(cur)keep.push(Object.assign({},cur,{rest:(cur.rest||[]).filter(i=>!gone.has(i))}));
+  S.games=here(S).length>=4?makeGames(S,keep):keep;enterGames=true;
 }
 function touch(){S.example=false}
 
@@ -1115,6 +1155,14 @@ document.addEventListener("click",e=>{
   if(t.dataset.del){S.players=S.players.filter(p=>p.id!==t.dataset.del);if(S.players.length<8)S.courts=1;touch();regenerate();haptic()}
   else if(t.dataset.courts){if(S.courts===+t.dataset.courts)return;S.courts=+t.dataset.courts;touch();regenerate()}
   else if(t.id==="gen"){touch();regenerate();haptic();showToast("Susunan baru dibuat")}
+  else if(t.dataset.late){
+    // game yang sedang berjalan dipertahankan, kecuali orang yang ditandai telat ada di dalamnya
+    const p=S.players.find(x=>x.id===t.dataset.late);if(!p)return;
+    const now=S.games.find(g=>!g.done),inNow=!!now&&now.courts.some(c=>[...c.a,...c.b].includes(p.id));
+    p.late=!p.late;if(!p.late)delete p.late;touch();regenerate(!inNow);haptic();
+    const hereN=here(S).length;
+    showToast(p.late?(hereN>=4?`${p.name} telat, tabel disusun ulang tanpa dia`:`${p.name} telat, tunggu sampai 4 orang datang`):(hereN>=4?`${p.name} sudah datang, masuk tabel mulai game berikutnya`:`${p.name} sudah datang, ${hereN} dari 4 orang`));
+  }
   else if(t.dataset.done){const i=+t.dataset.done,g=S.games[i];g.done=!g.done;touch();haptic();
     if(tab==="beranda"){boardIn=true;showToast(g.done?`Game ${i+1} selesai`:`Game ${i+1} dibuka lagi`)}}
   else if(t.dataset.kok){const nk=Math.max(0,S.bill.kok+ +t.dataset.kok);if(nk!==S.bill.kok)haptic();S.bill.kok=nk;touch()}
